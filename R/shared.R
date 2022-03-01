@@ -1,10 +1,10 @@
 #general shared package utilities
 
 #parses and formats the provided column names to the database standard
-formatImportColumnNames=function(columnNames,prefixesToExclude=c(), deitemise=F, forceItem=NULL, columnNameLength=30){
+formatImportColumnNames=function(columnNames,prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, columnNameLength=30){
 
   #columnNames<-colnames(df)
-  #prefixesToExclude = "dem_1\\."
+  #prefixesToExcludeRegex = "dem_1\\."
   columnNames.orig<-columnNames
 
   colsNumeric<-grepl(pattern = ".+_numeric$",x = columnNames, ignore.case = T)
@@ -17,6 +17,10 @@ formatImportColumnNames=function(columnNames,prefixesToExclude=c(), deitemise=F,
   colsValueLabels<-columnNames.orig %in% valueLabels$valueLabelColumn
 
 
+  #add label suffix to label column names
+  columnNames[colsValueLabels] <- paste0(columnNames[colsValueLabels],"l")
+
+
   colsSelect<-!colsValueLabels  #add more logic here when additional column types
 
 
@@ -26,10 +30,10 @@ formatImportColumnNames=function(columnNames,prefixesToExclude=c(), deitemise=F,
     cName<-columnNames[iCol]
     #parse column name further
     ##exclude prefixes if any
-    if(length(prefixesToExclude)>0){
-      for(iPat in 1:length(prefixesToExclude)){
+    if(length(prefixesToExcludeRegex)>0){
+      for(iPat in 1:length(prefixesToExcludeRegex)){
         #iPat<-1
-        cName<-gsub(pattern = paste0("^",prefixesToExclude[iPat],"(.+)"),replacement = "\\1", x = cName)
+        cName<-gsub(pattern = paste0("^",prefixesToExcludeRegex[iPat],"(.+)"),replacement = "\\1", x = cName)
       }
     }
 
@@ -44,9 +48,13 @@ formatImportColumnNames=function(columnNames,prefixesToExclude=c(), deitemise=F,
 
   #trim unwanted characters
   columnNames<-gsub(pattern = "[^A-Za-z0-9_]",replacement = "", x = columnNames) #includes the _ character to accomodate the item categorisation
+  columnNames<-gsub(pattern = "[\\.]",replacement = "", x = columnNames)
 
   #case
-  columnNames<-substr(tolower(columnNames),start = 1, stop = columnNameLength)
+  columnNames<-substr(tolower(columnNames),start =nchar(columnNames)-columnNameLength, stop=nchar(columnNames)) #take the tail rather than the head to accommodate tail numbering
 
-  return(list(colsSelect=colsSelect, names.new=columnNames, names.orig=columnNames.orig, colsValueLabels=colsValueLabels, valueLabelColumn=valueLabels$valueLabelColumn))
+  #return(list(colsSelect=colsSelect, names.new=columnNames, names.orig=columnNames.orig, colsValueLabels=colsValueLabels, valueLabelColumn=valueLabels$valueLabelColumn))
+  return(data.frame(colsSelect=colsSelect, names.new=columnNames, names.orig=columnNames.orig, colsValueLabels=colsValueLabels, valueLabelColumn=valueLabels$valueLabelColumn)) #experimental
 }
+
+

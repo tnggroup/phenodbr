@@ -13,8 +13,11 @@ pgDatabaseUtilityClass <- setRefClass("pgDatabaseUtility",
                                                connection = "ANY",
                                                importDataDf = "ANY",
                                                itemAnnotationDf = "ANY",
+                                               variableAnnotationDf = "ANY",
                                                valueAnnotationDf = "ANY",
-                                               variableValueLabelsDf = "ANY"
+                                               variableLabelsDf = "ANY",
+                                               variableValueLabelsDf = "ANY",
+                                               columnFormat = "ANY"
                                              ),
                                              methods = list
                                              (
@@ -258,7 +261,7 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  selectCohortinstanceAssessmentItemVariableMeta=function(cohortinstanceId,assessmentId){
+  selectCohortinstanceAssessmentItemVariableInventory=function(cohortinstanceId,assessmentId){
     q <- dbSendQuery(connection,
                      "SELECT * FROM met.cohort_inventory WHERE cohortinstance_id=$1 AND assessment_id=$2",
                      list(cohortinstanceId,assessmentId))
@@ -269,10 +272,29 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  selectCohortinstanceAssessmentItemVariableMeta=function(cohortinstanceId,assessmentId){
+  selectImportDataAssesmentVariableAnnotation=function(){
     q <- dbSendQuery(connection,
-                     "SELECT * FROM met.cohort_inventory WHERE cohortinstance_id=$1 AND assessment_id=$2",
-                     list(cohortinstanceId,assessmentId))
+                     "SELECT * FROM t_import_data_assessment_variable_annotation")
+    res<-dbFetch(q)
+    dbClearResult(q)
+    return(res)
+  }
+)
+
+pgDatabaseUtilityClass$methods(
+  selectImportDataAssesmentItemAnnotation=function(){
+    q <- dbSendQuery(connection,
+                     "SELECT * FROM t_import_data_assessment_item_annotation")
+    res<-dbFetch(q)
+    dbClearResult(q)
+    return(res)
+  }
+)
+
+pgDatabaseUtilityClass$methods(
+  selectImportDataMeta=function(){
+    q <- dbSendQuery(connection,
+                     "SELECT * FROM t_import_data_meta")
     res<-dbFetch(q)
     dbClearResult(q)
     return(res)
@@ -310,7 +332,7 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  importDataAsTables=function(temporary = T){
+  importDataAsTables=function(temporary = T, itemAnnotation=T, variableAnnotation=T, variableValueLabels=T){
 
     if(!is.null(importDataDf)){
       #main import data
@@ -320,15 +342,15 @@ pgDatabaseUtilityClass$methods(
       dbAppendTable(conn = connection, name = name, value = importDataDf)
     }
 
-    if(!is.null(itemAnnotationDf)){
-      #itemAnnotation
-      name<-"_item_annotation_df"
+    #itemAnnotation
+    name<-"_item_annotation_df"
+    if(itemAnnotation){
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
       dbCreateTable(conn = connection, name = name, fields = itemAnnotationDf, temporary = temporary)
       dbAppendTable(conn = connection, name = name, value = itemAnnotationDf)
     }
 
-    if(!is.null(variableAnnotationDf)){
+    if(variableAnnotation){
       #variableAnnotation
       name<-"_variable_annotation_df"
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
@@ -336,7 +358,7 @@ pgDatabaseUtilityClass$methods(
       dbAppendTable(conn = connection, name = name, value = variableAnnotationDf)
     }
 
-    if(is.null(variableValueLabelsDf)){
+    if(variableValueLabels){
       #variableValueLabels
       name<-"_variable_value_labels_df"
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
@@ -355,7 +377,7 @@ pgDatabaseUtilityClass$methods(
 # )
 
 pgDatabaseUtilityClass$methods(
-  prepareImport=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName,cohortIdColumn,varableAnnotationTableName=NA_character_,itemAnnotationTableName=NA_character_){
+  prepareImport=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName="_import_data_df",cohortIdColumn,varableAnnotationTableName="_variable_annotation_df",itemAnnotationTableName="_item_annotation_df"){
     q <- dbSendQuery(connection,
                      "SELECT coh.prepare_import($1,$2,$3,$4,$5,$6,$7,$8)",
                      list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName,cohortIdColumn,varableAnnotationTableName,itemAnnotationTableName))
@@ -366,7 +388,7 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  importData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,stageCode,tableName,doAnnotate=F,addIndividuals=F,doInsert=F){
+  importData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,stageCode,tableName="_import_data_df",doAnnotate=F,addIndividuals=F,doInsert=F){
     q <- dbSendQuery(connection,
                      "SELECT coh.import_data($1,$2,$3,$4,$5,$6,$7,$8,$9)",
                      list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,stageCode,tableName,doAnnotate,addIndividuals,doInsert))
@@ -433,36 +455,17 @@ pgDatabaseUtilityClass$methods(
 )
 
 
-##OUTDATED! UPDATE AFTER SUCCESSFUL NEW IMPORT PROCEDURE! Splot into different functions if possible
 pgDatabaseUtilityClass$methods(
-  defaultAnnotateAndImportProcedure=function(prefixesToExclude=c(), deitemise=F, forceItem=NULL, interpretBooleanDatatypeFromData=T){
+  parseVariableLabels=function(){
+    variableLabelsDf <<- lapply(importDataDf,function(x)attr(x,which = "label", exact = T)[[1]])
+  }
+)
 
-    columnFormat <- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExclude = prefixesToExclude,deitemise = deitemise, forceItem = forceItem)
-    colnames(importDataDf) <<- columnFormat$names.new
 
-    #variable labels
-    variableLabels<-unlist(lapply(importDataDf,function(x)attr(x,which = "label", exact = T)[[1]]))
-
-    #fix ID
-    importDataDf$id <<- gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf$id)
-
-    #Change data type of two-category 1/0 columns to boolean true/false, based on the value space data from a sample (tail) of 2000 rows
-    if(interpretBooleanDatatypeFromData){
-      df.sample<-tail(importDataDf,n = 2000)
-      if(nrow(df.sample)>99){ #only run if we have a sufficient sample to base the decision on. may still cause sparse variables to be misinterpreted here as boolean where there in fact are more values but not in the sample.
-        for(iCol in 1:length(colnames(df))){
-          #iCol<-24
-          if(!is.numeric(df.sample[,iCol])) next
-          if(sum(!is.na(df.sample[,iCol]))>10){
-            vals<-na.omit(unique(df.sample[,iCol]))
-            vals<-vals[order(vals)]
-            if(length(vals)>1 & length(vals) < 3 & (0 %in% vals | 1 %in% vals)) importDataDf[,iCol] <<- (importDataDf[,iCol]==1)
-          }
-        }
-      }
-    }
-
+pgDatabaseUtilityClass$methods(
+  parseVariableValueLabels=function(){
     variableValueLabelsDf <<- data.frame(matrix(data = NA,nrow = 0,ncol = 3))
+    #colnames(variableValueLabelsDf)<-c("variable_index","value","label")
     #parse value labels
     for(iCol in 1:length(columnFormat$names.orig)){
       #iCol<-24
@@ -478,25 +481,85 @@ pgDatabaseUtilityClass$methods(
         warning(paste0("Value label combination inconsistency found for column ",columnFormat$names.new[iCol]))
       }
 
-      variableValueLabelsDf <<- rbind(variableValueLabelsDf,data.frame(variable_index=iCol,value=perm[,1],label=perm[,2]))
+      if(nrow(perm)>0) variableValueLabelsDf <<- rbind(variableValueLabelsDf,data.frame(variable_index=iCol,value=perm[,1],label=perm[,2]))
     }
-    colnames(variableValueLabelsDf) <<- c("variable_index","value","label")
+
+    colnames(variableValueLabelsDf)<-c("variable_index","value","label")
+
+  }
+)
 
 
-    #select actual columns to import
-    importDataDf <<- importDataDf[,columnFormat$colsSelect]
+pgDatabaseUtilityClass$methods(
+  formatImportColumnNames=function(prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, columnNameLength=30){
+    columnFormat <<- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, columnNameLength = columnNameLength)
+    colnames(importDataDf) <<- columnFormat$names.new
 
-    #annotation tables
+    #fix duplicate column naming
+    columnFormat2 <- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, columnNameLength = columnNameLength)
+
+    columnFormat$names.new <<- colnames(importDataDf)
+    colnames(importDataDf) <<- columnFormat$names.new
+  }
+)
+
+
+pgDatabaseUtilityClass$methods(
+  fixIdColumn=function(){
+    importDataDf$id <<- gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf$id)
+  }
+)
+
+
+#synchronise item text/label between value and label column - only works for numeric columns missing labels
+pgDatabaseUtilityClass$methods(
+  synchroniseVariableLabelTextForValueColumns=function(){
+    for(iCol in 1:length(columnFormat$names.orig)){
+      #iCol<-46
+      if(is.null(variableLabelsDf[iCol][[1]]) & !is.null(variableLabelsDf[columnFormat$valueLabelColumn[iCol]][[1]]) ){
+        variableLabelsDf[iCol] <<- variableLabelsDf[columnFormat$valueLabelColumn[iCol]][[1]]
+      }
+    }
+  }
+)
+
+#Change data type of two-category 1/0 columns to boolean true/false, based on the value space data from a sample (tail) of 2000 rows
+pgDatabaseUtilityClass$methods(
+  interpretAndParseBooleanDataTypes=function(){
+    df.sample<-tail(importDataDf,n = 2000)
+    if(nrow(df.sample)>99){ #only run if we have a sufficient sample to base the decision on. may still cause sparse variables to be misinterpreted here as boolean where there in fact are more values but not in the sample.
+      for(iCol in 1:length(colnames(df))){
+        #iCol<-24
+        if(!is.numeric(df.sample[,iCol])) next
+        if(sum(!is.na(df.sample[,iCol]))>10){
+          vals<-na.omit(unique(df.sample[,iCol]))
+          vals<-vals[order(vals)]
+          if(length(vals)>1 & length(vals) < 3 & (0 %in% vals | 1 %in% vals)) importDataDf[,iCol] <<- (importDataDf[,iCol]==1)
+        }
+      }
+    }
+  }
+)
+
+
+pgDatabaseUtilityClass$methods(
+  createVariableAnnotation=function(){
     variableAnnotationDf <<- data.frame(
-      column_name=colnames(importDataDf),
-      variable_code=NA_character_,
-      variable_original_descriptor=columnFormat$names.orig[columnFormat$colsSelect],
-      item_code=colnames(importDataDf)
+      column_name=colnames(importDataDf)
     )
-    variableAnnotationDf$variable_label <<- variableLabels[variableAnnotationDf$column_name]
+    variableAnnotationDf$variable_code <<- NA_character_
+    variableAnnotationDf$variable_original_descriptor <<- columnFormat$names.orig
+    variableAnnotationDf$item_code <<- variableAnnotationDf$column_name
+    variableAnnotationDf$variable_label <<- as.character(variableLabelsDf)
     variableAnnotationDf$index <<- 1:nrow(variableAnnotationDf)
 
-    uniqueVariableLabels<-unique(na.omit(variableAnnotationDf$variable_label))
+  }
+)
+
+#This also creates an item annotation
+pgDatabaseUtilityClass$methods(
+  amendVariableAnnotationFromVariableLabelText=function(itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T){
+    uniqueVariableLabels <- unlist(unique(na.omit(variableAnnotationDf$variable_label)))
 
     #Create item codes using text mining (tm package)
     n_item_code_raw<-gsub(pattern = "[^a-z0-9 ]+", replacement = "\\1", x = tolower(uniqueVariableLabels)) #only letters, numbers, spaces
@@ -506,8 +569,14 @@ pgDatabaseUtilityClass$methods(
     newItemAnnotationCodes$item_code<-lapply(n_item_code_split, function(x){
       paste0(x[!x %in% trimmedStopwordsEnglish],collapse = "")
     })
+    #restrict to max 30 chars
+    if(itemCodeEndHead){
+      newItemAnnotationCodes$item_code<-substr(newItemAnnotationCodes$item_code,1,30)
+    } else {
+      newItemAnnotationCodes$item_code<-substr(newItemAnnotationCodes$item_code,nchar(newItemAnnotationCodes$item_code) - 30,nchar(newItemAnnotationCodes$item_code))
+    }
 
-
+    #compare the new item codes (using the original label text) and detect which items to merge into one
     merged<-merge(variableAnnotationDf,newItemAnnotationCodes, by.x = "variable_label",by.y = "item_text",all.x = T, all.y = F)
     merged$item_code.x<-as.character(merged$item_code.x)
     merged$item_code.y<-as.character(merged$item_code.y)
@@ -515,6 +584,7 @@ pgDatabaseUtilityClass$methods(
 
     merged_agg<-aggregate(column_name ~ item_code.y,merged,length)
     multiItems<-merged_agg[merged_agg$column_name>1,c("item_code.y")]
+    multiItems<-multiItems[multiItems!="null"] #remove strings denoting 'null'
     multiItemsVarL<-merged$item_code.y %in% multiItems
     merged$item_code<-ifelse(multiItemsVarL,merged$item_code.y,merged$item_code.x)
     merged$variable_code<-ifelse(multiItemsVarL,merged$item_code.x,merged$variable_code)
@@ -524,12 +594,61 @@ pgDatabaseUtilityClass$methods(
     itemAnnotationDf <<- merged[,c("item_code","variable_label")]
     colnames(itemAnnotationDf) <<- c("item_code","item_text")
     itemAnnotationDf <<- unique(itemAnnotationDf)
-    itemAnnotationDf$assessment_type <<- "questionnaire"
+    itemAnnotationDf$assessment_type <<- itemAnnotationAssessmentType
     itemAnnotationDf$assessment_item_type_code <<- ifelse(itemAnnotationDf$item_code %in% multiItems, "multi","single")
     itemAnnotationDf$item_index <<- 1:nrow(itemAnnotationDf)
     itemAnnotationDf$item_documentation <<- ""
 
-    dbutil$importDataAsTables(temporary = F)
+  }
+)
+
+pgDatabaseUtilityClass$methods(
+  filterColumnsOnFormatting=function(){
+    importDataDf <<- importDataDf[,columnFormat$colsSelect]
+    variableLabelsDf <<- variableLabelsDf[columnFormat$colsSelect]
+    columnFormat <<- columnFormat[columnFormat$colsSelect,]
+  }
+)
+
+
+pgDatabaseUtilityClass$methods(
+  defaultAnnotateAndImportProcedure=function(cohortCode, instanceCode, assessmentCode, assessmentVersionCode, stageCode, itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T, cohortIdColumn="id", interpretBooleanDatatypeFromData=F, parseItemsFromVariableLabelText=T, prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, prepare=T, import=T){
+
+    #variable labels
+    parseVariableLabels()
+
+    #format column names
+    formatImportColumnNames(prefixesToExcludeRegex = prefixesToExcludeRegex, deitemise = deitemise)
+
+    #synchronise variable text/label between value and label columns - only works for numeric columns missing labels
+    synchroniseVariableLabelTextForValueColumns()
+
+    #fix ID
+    fixIdColumn()
+
+    #variable value labels
+    parseVariableValueLabels()
+
+    #Change data type of two-category 1/0 columns to boolean true/false, based on the value space data from a sample (tail) of 2000 rows
+    if(interpretBooleanDatatypeFromData) interpretAndParseBooleanDataTypes()
+
+    #select actual columns to import
+    filterColumnsOnFormatting()
+
+    #annotation tables
+    createVariableAnnotation()
+
+    #update item categorisation from variable label texts, create item annotation
+    if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead)
+
+    #import all tables
+    if(prepare) importDataAsTables()
+
+    #perform database preparation procedures for import
+    if(prepare) prepareImport(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, cohortIdColumn = cohortIdColumn)
+
+    #perform database import
+    if(import) importData(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, stageCode = stageCode, doAnnotate = T, addIndividuals = T, doInsert = T)
 
   }
 )

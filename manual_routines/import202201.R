@@ -10,7 +10,13 @@ library(phenodbr)
 
 #settings and configuration
 qImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/MT-TNG BioResource EDIT - ilovedata - ilovedata/data/latest_freeze/covidcns",mustWork = T)
-dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password="")
+cognitronExportImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/MT-TNG BioResource EDIT - ilovedata - ilovedata/covid_cns/covidcns_cognitron",mustWork = T)
+pwtemp <- rstudioapi::askForPassword(prompt = "Enter database password for specified user.")
+
+
+
+
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
 #dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=5432, password="")
 #dbutil <- pgDatabaseUtilityClass(host="10.200.105.5", dbname="phenodb", user="postgres", port=5432, password="")
 
@@ -273,7 +279,6 @@ variableAnnotationDf$index <- 1:nrow(variableAnnotationDf)
 
 uniqueVariableLabels <- unlist(unique(na.omit(variableAnnotationDf$variable_label)))
 
-
 #Create item codes using text mining (tm package)
 n_item_code_raw<-gsub(pattern = "[^a-z0-9 ]+", replacement = "\\1", x = tolower(uniqueVariableLabels)) #only letters, numbers, spaces
 n_item_code_split<-strsplit(x = n_item_code_raw,split = " ")
@@ -311,5 +316,87 @@ dbutil$importDataAsTable(name = "_import_data_df",dbutil$importDataDf,temporary 
 dbutil$importDataAsTable(name = "_item_annotation_df",itemAnnotationDf,temporary = F)
 dbutil$importDataAsTable(name = "_variable_annotation_df",variableAnnotationDf,temporary = F)
 dbutil$importDataAsTable(name = "_variable_value_labels_df",variableValueLabelsDf,temporary = F)
+
+#CAGE
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"cage_covidcns_clean.rds"))
+#View(dbutil$importDataDf)
+dbutil$parseVariableLabels()
+dbutil$formatImportColumnNames(prefixesToExcludeRegex = "cage\\.",deitemise = T)
+dbutil$synchroniseVariableLabelTextForValueColumns()
+dbutil$fixIdColumn()
+dbutil$parseVariableValueLabels()
+dbutil$interpretAndParseBooleanDataTypes() #this fails to interpret them as boolean because of multiple other values
+dbutil$filterColumnsOnFormatting()
+dbutil$createVariableAnnotation()
+dbutil$amendVariableAnnotationFromVariableLabelText()
+#View(dbutil$variableAnnotationDf)
+dbutil$importDataAsTables()
+dbutil$prepareImport(cohortCode = "covidcns", instanceCode = "2022",assessmentCode = "cage", assessmentVersionCode = "covidcns",cohortIdColumn = "id")
+dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cage", assessmentVersionCode = "covidcns",stageCode = "bl",doAnnotate = T,addIndividuals = T,doInsert = T)
+
+#CFS
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"cfs_covidcns_clean.rds"))
+#View(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cfq11", assessmentVersionCode = "covidcns", stageCode = "bl", prefixesToExcludeRegex = "cfs\\.", deitemise = T)
+
+#SEX
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"sex_gender_sexuality_covidcns_clean.rds"))
+#View(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", prefixesToExcludeRegex = "dem\\.", deitemise = T)
+
+#EDUCATION - highest qualification
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"highest_qualification_covidcns_clean.rds"))
+#View(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", prefixesToExcludeRegex = "dem\\.", deitemise = T)
+
+#LANGUAGE
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"language_covidcns_clean.rds"))
+#View(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", prefixesToExcludeRegex = "dem\\.", deitemise = T)
+
+#COGNITRON questionnaire
+dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil$readImportData(filepath.rds = file.path(qImportFolderPath,"cognitron_outp_covidcns_clean.rds"))
+
+#exclude a duplicate variable
+# dbutil$importDataDf<-dbutil$importDataDf[,!colnames(dbutil$importDataDf)=="cognitron_outp.participant_difficulties_test_attempted.1_numeric"]
+
+#View(dbutil$importDataDf)
+# columnFormat <- phenodbr::formatImportColumnNames(columnNames = colnames(dbutil$importDataDf),prefixesToExcludeRegex = "cognitron_outp\\.",deitemise = T)
+# colnames(dbutil$importDataDf)<-columnFormat$names.new
+
+
+dbutil$parseVariableLabels()
+
+#format column names
+dbutil$formatImportColumnNames(prefixesToExcludeRegex = "cognitron_outp\\.", deitemise = T)
+
+#synchronise variable text/label between value and label columns - only works for numeric columns missing labels
+dbutil$synchroniseVariableLabelTextForValueColumns()
+
+#fix ID
+dbutil$fixIdColumn()
+
+#variable value labels
+dbutil$parseVariableValueLabels()
+
+#select actual columns to import
+dbutil$filterColumnsOnFormatting()
+
+#annotation tables
+dbutil$createVariableAnnotation()
+
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cognitronq", assessmentVersionCode = "2022", stageCode = "bl", itemCodeEndHead = F,  prefixesToExcludeRegex = "cognitron_outp\\.", parseItemsFromVariableLabelText = F, deitemise = T, prepare = F, import = F)
+
+
+
+dbutil$importDataAsTables(temporary = F, itemAnnotation = F)
+#This was then imported manually from the database because some issues with the R script - new bug?
+#dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cognitronq", assessmentVersionCode = "2022", stageCode = "bl", doAnnotate = T, addIndividuals = T, doInsert = T)
 
 
