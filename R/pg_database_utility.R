@@ -12,6 +12,7 @@ pgDatabaseUtilityClass <- setRefClass("pgDatabaseUtility",
                                                savedCachePath = "character",
                                                connection = "ANY",
                                                importDataDf = "ANY",
+                                               exportDataDf = "ANY",
                                                itemAnnotationDf = "ANY",
                                                variableAnnotationDf = "ANY",
                                                valueAnnotationDf = "ANY",
@@ -650,5 +651,32 @@ pgDatabaseUtilityClass$methods(
     #perform database import
     if(import) importData(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, stageCode = stageCode, doAnnotate = T, addIndividuals = T, doInsert = T)
 
+  }
+)
+
+
+pgDatabaseUtilityClass$methods(
+  selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+    q <- dbSendQuery(connection,
+                     "SELECT * FROM coh._create_current_assessment_item_variable_tview(
+                      	met.get_cohort($1),
+                      	met.get_cohortinstance($1,$2),
+                      	met.get_assessment_item_variables(
+                          assessment_code => $3,
+                          assessment_version_code => $4,
+                          assessment_item_code => $5,
+                          assessment_variable_code_full => $6,
+                          assessment_variable_code_original => $7
+                      	)
+                      )",
+                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList,assessmentVariableCodeFullList,assessmentVariableCodeOriginalList)
+                     )
+    res<-dbFetch(q)
+    dbClearResult(q)
+
+    q <- dbSendQuery(connection,"SELECT * FROM t_export_data")
+    exportDataDf <<- dbFetch(q)
+    dbClearResult(q)
+    return("The data retrieved by this function is stored in the exportDataDf.")
   }
 )

@@ -19,6 +19,7 @@ pwtemp <- rstudioapi::askForPassword(prompt = "Enter database password for speci
 dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
 #dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=5432, password="")
 #dbutil <- pgDatabaseUtilityClass(host="10.200.105.5", dbname="phenodb", user="postgres", port=5432, password="")
+rm(pwtemp)
 
 #routine
 
@@ -400,3 +401,23 @@ dbutil$importDataAsTables(temporary = F, itemAnnotation = F)
 #dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cognitronq", assessmentVersionCode = "2022", stageCode = "bl", doAnnotate = T, addIndividuals = T, doInsert = T)
 
 
+#Test of export data functionality
+res <- dbutil$selectExportData(cohortCode = "covidcns",instanceCode = "2022", assessmentCode="covidcnsdem",assessmentVersionCode="1")
+
+#ERROR WHEN NULL ITEM AND VARIABLE LISTS!!! -- SEE THE create-adaptations.sql
+q <- dbSendQuery(dbutil$connection,
+                 "SELECT * FROM coh._create_current_assessment_item_variable_tview(
+                      	met.get_cohort($1),
+                      	met.get_cohortinstance($1,$2),
+                      	met.get_assessment_item_variables(
+                          assessment_code => $3,
+                          assessment_version_code => $4,
+                          assessment_item_code => $5,
+                          assessment_variable_code_full => $6,
+                          assessment_variable_code_original => $7
+                      	)
+                      )",
+                 list("covidcns","2022","covidcnsdem","1",NA,NA,NA)
+)
+res<-dbFetch(q)
+dbClearResult(q)
