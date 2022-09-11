@@ -9,17 +9,22 @@ library(tidyverse)
 library(phenodbr)
 
 #settings and configuration
-qImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/MT-TNG BioResource EDIT - ilovedata - ilovedata/data/latest_freeze/covidcns",mustWork = T)
-cognitronExportImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/MT-TNG BioResource EDIT - ilovedata - ilovedata/covid_cns/covidcns_cognitron",mustWork = T)
-pwtemp <- rstudioapi::askForPassword(prompt = "Enter database password for specified user.")
+qImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/TNG-Public - ilovecovidcns - ilovecovidcns/data/latest_freeze",mustWork = T)
+cognitronExportImportFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/TNG-Public - ilovecovidcns - ilovecovidcns/data/cognitron",mustWork = T)
+
+cinfo<-c()
+cinfo$pw <- rstudioapi::askForPassword(prompt = "Enter database password for specified user.")
+cinfo$host<-"localhost"
+cinfo$dbname<-"phenodb"
+cinfo$user<-"postgres"
+cinfo$port<-5432 #65432 for remote
 
 
 
 
-dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=65432, password= pwtemp)
+dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinfo$user, port=cinfo$port, password= cinfo$pw)
 #dbutil <- pgDatabaseUtilityClass(host="localhost", dbname="phenodb", user="postgres", port=5432, password="")
 #dbutil <- pgDatabaseUtilityClass(host="10.200.105.5", dbname="phenodb", user="postgres", port=5432, password="")
-rm(pwtemp)
 
 #routine
 

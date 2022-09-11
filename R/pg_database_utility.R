@@ -94,6 +94,16 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
+  getPGTempSchema=function(cohort){
+    q <- dbSendQuery(connection,
+                     "SELECT nspname FROM pg_namespace WHERE oid  =  pg_my_temp_schema()")
+    res<-dbFetch(q)
+    dbClearResult(q)
+    if(length(res)>0) return(res[[1]]) else return(NA_character_)
+  }
+)
+
+pgDatabaseUtilityClass$methods(
   getCohort=function(cohort){
     q <- dbSendQuery(connection,
                      "SELECT met.get_cohort($1)",
@@ -273,7 +283,7 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  selectImportDataAssesmentVariableAnnotation=function(){
+  selectImportDataAssessmentVariableAnnotation=function(){
     q <- dbSendQuery(connection,
                      "SELECT * FROM t_import_data_assessment_variable_annotation")
     res<-dbFetch(q)
@@ -283,7 +293,7 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  selectImportDataAssesmentItemAnnotation=function(){
+  selectImportDataAssessmentItemAnnotation=function(){
     q <- dbSendQuery(connection,
                      "SELECT * FROM t_import_data_assessment_item_annotation")
     res<-dbFetch(q)
@@ -377,6 +387,7 @@ pgDatabaseUtilityClass$methods(
 #   }
 # )
 
+#make sure you don't have any tables named as the temporary tables - they will precede the temp tables in the path when run from R and make the access right assignment fail!!!
 pgDatabaseUtilityClass$methods(
   prepareImport=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName="_import_data_df",cohortIdColumn,varableAnnotationTableName="_variable_annotation_df",itemAnnotationTableName="_item_annotation_df"){
     q <- dbSendQuery(connection,
@@ -388,6 +399,7 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
+#must be a member of phenodb_coworker
 pgDatabaseUtilityClass$methods(
   importData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,stageCode,tableName="_import_data_df",doAnnotate=F,addIndividuals=F,doInsert=F){
     q <- dbSendQuery(connection,
@@ -485,7 +497,7 @@ pgDatabaseUtilityClass$methods(
       if(nrow(perm)>0) variableValueLabelsDf <<- rbind(variableValueLabelsDf,data.frame(variable_index=iCol,value=perm[,1],label=perm[,2]))
     }
 
-    colnames(variableValueLabelsDf)<-c("variable_index","value","label")
+    colnames(variableValueLabelsDf) <<- c("variable_index","value","label")
 
   }
 )
@@ -506,8 +518,8 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  fixIdColumn=function(){
-    importDataDf$id <<- gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf$id)
+  fixIdColumn=function(cohortIdColumn="id"){
+    importDataDf[,c(cohortIdColumn)] <<- gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf[,c(cohortIdColumn)])
   }
 )
 
@@ -611,9 +623,27 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
-
+#this should not be needed
 pgDatabaseUtilityClass$methods(
-  defaultAnnotateAndImportProcedure=function(cohortCode, instanceCode, assessmentCode, assessmentVersionCode, stageCode, itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T, cohortIdColumn="id", interpretBooleanDatatypeFromData=F, parseItemsFromVariableLabelText=T, prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, prepare=T, import=T){
+  cleanup=function(){
+    q <- dbSendQuery(connection,"DROP TABLE IF EXISTS t_prepare_import_data_settings CASCADE"
+    )
+    dbClearResult(q)
+    q <- dbSendQuery(connection,"DROP TABLE IF EXISTS t_import_data_assessment_variable_annotation CASCADE"
+    )
+    dbClearResult(q)
+    q <- dbSendQuery(connection,"DROP TABLE IF EXISTS t_import_data_assessment_item_annotation CASCADE"
+    )
+    dbClearResult(q)
+    q <- dbSendQuery(connection,"DROP VIEW IF EXISTS t_import_data_meta CASCADE"
+    )
+    dbClearResult(q)
+  }
+)
+
+#must be a member of phenodb_coworker
+pgDatabaseUtilityClass$methods(
+  defaultAnnotateAndImportProcedure=function(cohortCode, instanceCode, assessmentCode, assessmentVersionCode, stageCode, itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T, cohortIdColumn="id", interpretBooleanDatatypeFromData=F, parseItemsFromVariableLabelText=T, prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, prepare=T, import=T, doAnnotate = T, addIndividuals = T, doInsert = T){
 
     #variable labels
     parseVariableLabels()
@@ -625,7 +655,7 @@ pgDatabaseUtilityClass$methods(
     synchroniseVariableLabelTextForValueColumns()
 
     #fix ID
-    fixIdColumn()
+    fixIdColumn(cohortIdColumn = cohortIdColumn)
 
     #variable value labels
     parseVariableValueLabels()
@@ -649,7 +679,7 @@ pgDatabaseUtilityClass$methods(
     if(prepare) prepareImport(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, cohortIdColumn = cohortIdColumn)
 
     #perform database import
-    if(import) importData(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, stageCode = stageCode, doAnnotate = T, addIndividuals = T, doInsert = T)
+    if(import) importData(cohortCode = cohortCode, instanceCode = instanceCode, assessmentCode = assessmentCode, assessmentVersionCode = assessmentVersionCode, stageCode = stageCode, doAnnotate = doAnnotate, addIndividuals = addIndividuals, doInsert = doInsert)
 
   }
 )
