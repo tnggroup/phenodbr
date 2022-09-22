@@ -485,6 +485,7 @@ pgDatabaseUtilityClass$methods(
       if(is.na(columnFormat$valueLabelColumn[iCol])) next
       svl<-columnFormat$valueLabelColumn[iCol]
       svlindex<-which(columnFormat$names.orig %in% svl)
+      perm<-NULL
       if(length(svlindex)>0){
         perm<-unique(na.omit(importDataDf[,c(iCol,svlindex[1])]))
       }

@@ -29,6 +29,9 @@ cinfo$port<-5432 #65432 for remote
 
 dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinfo$user, port=cinfo$port, password= cinfo$pw)
 #dbutil$setSearchPath.standard()
+
+
+
 #Demographics
 
 ##sex_and_gender_clean
@@ -49,21 +52,21 @@ dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics"
 # dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", doAnnotate = T, addIndividuals = T, doInsert = T)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
 
-#sexual_orientation_clean
+##sexual_orientation_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","sexual_orientation_clean.rds"))
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
 dbutil$cleanup()
 
-#marital_status_clean
+##marital_status_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","marital_status_clean.rds"))
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
 dbutil$cleanup()
 
-#language_clean
+##language_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","language_clean.rds"))
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
@@ -87,6 +90,47 @@ dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode =
 dbutil$cleanup()
 
 
+##highest_education_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","highest_education_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T, cohortIdColumn = "id")
+dbutil$cleanup()
+
+
+##ethnicity_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","ethnicity_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T, cohortIdColumn = "externaldatareference")
+dbutil$cleanup()
+
+#Baseline
+
+##covid19_covid_cns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","covid19_covid_cns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnscovid19", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id")
+dbutil$cleanup()
+
+
+#Core neuro
+
+##gcs_outpatient_covid_cns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"core_neuro","gcs_outpatient_covid_cns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id", doAnnotate = T, addIndividuals = F, doInsert = F )
+dbutil$itemAnnotationDf$assessment_type<-"interview"
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id", doAnnotate = F, addIndividuals = T, doInsert = T)
+dbutil$cleanup()
+
+
+
+
+
+#IDP's - NOT FINISHED!!
 dbutil$readImportData(dataframe = covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)$importDataDf)
 dbutil$parseVariableLabels()
 dbutil$formatImportColumnNames(deitemise = T) #this fails because it will try to set colnames on the data

@@ -6,12 +6,14 @@
 # -f Go to background
 # -L local connection - Specifies that connections to the given TCP port or Unix socket on the local (client) host are to be forwarded to the given host and port, or Unix socket, on the remote side.
 # -N Do not execute a remote command, for forwarding port only
-ssh -f -L 65432:postgresql.cluster-cjghupwohy3q.eu-west-2.rds.amazonaws.com:5432 user2@vpn.bredcap.org.uk -N
+ssh -f -L 65432:postgresql-cluster.cluster-cjghupwohy3q.eu-west-2.rds.amazonaws.com:5432 user2@vpn.bredcap.org.uk -N
+# with auto-close - untested! from: http://www.g-loaded.eu/2006/11/24/auto-closing-ssh-tunnels/
+ssh -f -L 65432:postgresql-cluster.cluster-cjghupwohy3q.eu-west-2.rds.amazonaws.com:5432 user2@vpn.bredcap.org.uk sleep 10;
 
 
 #Windows version
 #seemingly working
-ssh -fN -L 65432:postgresql.cluster-cjghupwohy3q.eu-west-2.rds.amazonaws.com:5432 user2@vpn.bredcap.org.uk
+ssh -fN -L 65432:postgresql-cluster.cluster-cjghupwohy3q.eu-west-2.rds.amazonaws.com:5432 user2@vpn.bredcap.org.uk
 
 
 
