@@ -57,4 +57,10 @@ formatImportColumnNames=function(columnNames,prefixesToExcludeRegex=c(), deitemi
   return(data.frame(colsSelect=colsSelect, names.new=columnNames, names.orig=columnNames.orig, colsValueLabels=colsValueLabels, valueLabelColumn=valueLabels$valueLabelColumn)) #experimental
 }
 
+asPgsqlTextArray=function(listToParse=c()){
+  if(length(listToParse)<1) return("ARRAY[]::character varying(100)[]")
+  modifiedList<-unlist(lapply(listToParse, function(x){paste0("'",x,"'")}))
+  return(paste0("ARRAY[",paste(modifiedList,collapse = ","),"]"))
+}
+
 

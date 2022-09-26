@@ -689,18 +689,16 @@ pgDatabaseUtilityClass$methods(
 pgDatabaseUtilityClass$methods(
   selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
     q <- dbSendQuery(connection,
-                     "SELECT * FROM coh._create_current_assessment_item_variable_tview(
-                      	met.get_cohort($1),
-                      	met.get_cohortinstance($1,$2),
-                      	met.get_assessment_item_variables(
-                          assessment_code => $3,
-                          assessment_version_code => $4,
-                          assessment_item_code => $5,
-                          assessment_variable_code_full => $6,
-                          assessment_variable_code_original => $7
-                      	)
-                      )",
-                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList,assessmentVariableCodeFullList,assessmentVariableCodeOriginalList)
+                     paste0("SELECT * FROM coh.create_current_assessment_item_variable_tview(
+                        cohort_code => $1,
+                      	instance_code => $2,
+                      	assessment_code => $3,
+                      	assessment_version_code => $4,
+                      	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
+                      	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
+                      	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
+                      )"),
+                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
                      )
     res<-dbFetch(q)
     dbClearResult(q)

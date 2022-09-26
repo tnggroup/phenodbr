@@ -36,6 +36,8 @@ dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinf
 
 ##sex_and_gender_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","sex_and_gender_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
 # dbutil$parseVariableLabels()
 # dbutil$formatImportColumnNames(prefixesToExcludeRegex = ".+\\.", deitemise = T)
 # dbutil$synchroniseVariableLabelTextForValueColumns()
@@ -45,12 +47,14 @@ dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics"
 # dbutil$filterColumnsOnFormatting()
 # dbutil$createVariableAnnotation()
 # dbutil$amendVariableAnnotationFromVariableLabelText()
-# dbutil$importDataAsTables(temporary = T)
+# dbutil$importDataAsTables(temporary = F)
 # dbutil$prepareImport(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", cohortIdColumn = "id")
 # dbutil$selectImportDataAssessmentVariableAnnotation()
 # dbutil$selectImportDataMeta()
 # dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", doAnnotate = T, addIndividuals = T, doInsert = T)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T,doAnnotate = T, doInsert = F)
 
 ##sexual_orientation_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","sexual_orientation_clean.rds"))
@@ -114,6 +118,8 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnscovid19", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id")
 dbutil$cleanup()
 
+#dbutil$importDataAsTables(temporary = F)
+
 
 #Core neuro
 
@@ -126,8 +132,15 @@ dbutil$itemAnnotationDf$assessment_type<-"interview"
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id", doAnnotate = F, addIndividuals = T, doInsert = T)
 dbutil$cleanup()
 
-
-
+#extraction test - this should generate a dataframe!
+dbutil$selectExportData(
+  cohortCode = "covidcns",
+  instanceCode = "2022",
+  assessmentCode = "covidcnsdem",
+  assessmentVersionCode = "1",
+  assessmentItemCodeList = c("followingqualificationsdoyou","ethnicorigin")
+  )
+dbutil$exportDataDf
 
 
 #IDP's - NOT FINISHED!!
