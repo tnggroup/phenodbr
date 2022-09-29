@@ -481,7 +481,7 @@ pgDatabaseUtilityClass$methods(
     #colnames(variableValueLabelsDf)<-c("variable_index","value","label")
     #parse value labels
     for(iCol in 1:length(columnFormat$names.orig)){
-      #iCol<-24
+      #iCol<-143
       if(is.na(columnFormat$valueLabelColumn[iCol])) next
       svl<-columnFormat$valueLabelColumn[iCol]
       svlindex<-which(columnFormat$names.orig %in% svl)
@@ -495,7 +495,7 @@ pgDatabaseUtilityClass$methods(
         warning(paste0("Value label combination inconsistency found for column ",columnFormat$names.new[iCol]))
       }
 
-      if(nrow(perm)>0) variableValueLabelsDf <<- rbind(variableValueLabelsDf,data.frame(variable_index=iCol,value=perm[,1],label=perm[,2]))
+      if(nrow(perm)>0) variableValueLabelsDf <<- rbind(variableValueLabelsDf,data.frame(variable_index=iCol,value=as.character(perm[,1]),label=as.character(perm[,2])))
     }
 
     colnames(variableValueLabelsDf) <<- c("variable_index","value","label")
@@ -507,12 +507,6 @@ pgDatabaseUtilityClass$methods(
 pgDatabaseUtilityClass$methods(
   formatImportColumnNames=function(prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, columnNameLength=30){
     columnFormat <<- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, columnNameLength = columnNameLength)
-    colnames(importDataDf) <<- columnFormat$names.new
-
-    #fix duplicate column naming
-    columnFormat2 <- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, columnNameLength = columnNameLength)
-
-    columnFormat$names.new <<- colnames(importDataDf)
     colnames(importDataDf) <<- columnFormat$names.new
   }
 )
