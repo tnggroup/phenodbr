@@ -160,83 +160,210 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsvaccine", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("vaccine\\.","vaccine\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
+#clin_neuro
 
-#--- old
-##sexual_orientation_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","sexual_orientation_clean.rds"))
-head(dbutil$importDataDf)
-colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
-dbutil$cleanup()
+##clinical_na_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"clin_neuro","clinical_na_inp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
 
-##marital_status_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","marital_status_clean.rds"))
-head(dbutil$importDataDf)
-colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = ".+\\.", deitemise = T)
-dbutil$cleanup()
-
-##language_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","language_clean.rds"))
-head(dbutil$importDataDf)
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^clinical_na_inp\\.(.+)"),replacement = "clinical_na\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 
-# dbutil$parseVariableLabels()
-# dbutil$formatImportColumnNames(prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T)
-# dbutil$synchroniseVariableLabelTextForValueColumns()
-# dbutil$fixIdColumn(cohortIdColumn = "externaldatareference")
-# dbutil$parseVariableValueLabels()
-# #dbutil$interpretAndParseBooleanDataTypes()
-# dbutil$filterColumnsOnFormatting()
-# dbutil$createVariableAnnotation()
-# dbutil$amendVariableAnnotationFromVariableLabelText()
-# dbutil$importDataAsTables(temporary = F)
-# dbutil$prepareImport(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", cohortIdColumn = "id")
-# dbutil$selectImportDataAssessmentVariableAnnotation()
-# dbutil$selectImportDataMeta()
-# dbutil$importData(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl", doAnnotate = T, addIndividuals = T, doInsert = T)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsna", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("clinical_na\\.","clinical_na\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
 
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T, cohortIdColumn = "externaldatareference")
-dbutil$cleanup()
+##clinical_na_outp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"clin_neuro","clinical_na_outp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
 
-
-##highest_education_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","highest_education_clean.rds"))
-head(dbutil$importDataDf)
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^clinical_na_outp\\.(.+)"),replacement = "clinical_na\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T, cohortIdColumn = "id")
-dbutil$cleanup()
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsna", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("clinical_na\\.","clinical_na\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+#Warning!! there may be text columns erroneously interpreted as float from the previous insert here which will make the routine crash until they have been corrected in teh database before the next import.
 
 
-##ethnicity_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"demographics","ethnicity_clean.rds"))
-head(dbutil$importDataDf)
+##core_neuro
+
+
+##fourat_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","fourat_inp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^fourat_inp\\.(.+)"),replacement = "fourat\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("dem\\.","dem_1\\."), deitemise = T, cohortIdColumn = "externaldatareference")
-dbutil$cleanup()
 
-#Baseline
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "4at", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("fourat\\.","fourat\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
 
-##covid19_covid_cns_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","covid19_covid_cns_clean.rds"))
-head(dbutil$importDataDf)
+##fourat_outp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","fourat_outp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^fourat_outp\\.(.+)"),replacement = "fourat\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnscovid19", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id")
-dbutil$cleanup()
 
-#dbutil$importDataAsTables(temporary = F)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "4at", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("fourat\\.","fourat\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
 
 
-#Core neuro
+##gcs_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","gcs_inp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
 
-##gcs_outpatient_covid_cns_clean
-dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"core_neuro","gcs_outpatient_covid_cns_clean.rds"))
-head(dbutil$importDataDf)
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^gcs_inp\\.(.+)"),replacement = "gcs\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id", doAnnotate = T, addIndividuals = F, doInsert = F )
-dbutil$itemAnnotationDf$assessment_type<-"interview"
-dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("covid19\\."), deitemise = T, cohortIdColumn = "id", doAnnotate = F, addIndividuals = T, doInsert = T)
-dbutil$cleanup()
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("gcs\\.","gcs\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##gcs_outp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","gcs_outp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^gcs_outp\\.(.+)"),replacement = "gcs\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "gcs", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("gcs\\.","gcs\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+
+##neuro_add_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","neuro_add_inp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^neuro_add_inp\\.(.+)"),replacement = "neuro_add\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsneuroadd", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("neuro_add\\.","neuro_add\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##neuro_add_outp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","neuro_add_outp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^neuro_add_outp\\.(.+)"),replacement = "neuro_add\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsneuroadd", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("neuro_add\\.","neuro_add\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+
+##nis_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","nis_inp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^nis_inp\\.(.+)"),replacement = "nis\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsnis", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("nis\\.","nis\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##nis_outp_covidcns_clean - special treatment as inpatients and outpatients share instrument
+readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","nis_outp_covidcns_clean.rds"))
+columnNames<-colnames(readImportData)
+
+#Edit colnames to correspond to a shared instrument for inpatients and outpatients
+for(iCol in 1:length(columnNames)){
+  #iCol<-4
+  cName<-columnNames[iCol]
+  cName<-gsub(pattern = paste0("^nis_outp\\.(.+)"),replacement = "nis\\.\\1", x = cName)
+  columnNames[iCol]<-cName
+}
+colnames(readImportData)<-columnNames
+dbutil$readImportData(dataframe = readImportData)
+#head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsnis", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("nis\\.","nis\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+
 
 #extraction test - this should generate a dataframe!
 dbutil$selectExportData(
