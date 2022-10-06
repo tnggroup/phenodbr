@@ -13,6 +13,7 @@ pgDatabaseUtilityClass <- setRefClass("pgDatabaseUtility",
                                                connection = "ANY",
                                                importDataDf = "ANY",
                                                exportDataDf = "ANY",
+                                               metaDataDf = "ANY",
                                                itemAnnotationDf = "ANY",
                                                variableAnnotationDf = "ANY",
                                                valueAnnotationDf = "ANY",
@@ -679,6 +680,25 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
+pgDatabaseUtilityClass$methods(
+  selectVariableMetaData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+    q <- dbSendQuery(connection,
+                     paste0("SELECT * FROM met.select_assessment_item_variable_meta(
+                        cohort_code => $1,
+                      	instance_code => $2,
+                      	assessment_code => $3,
+                      	assessment_version_code => $4,
+                      	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
+                      	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
+                      	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
+                      )"),
+                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+    )
+    metaDataDf <<- dbFetch(q)
+    dbClearResult(q)
+    return(metaDataDf)
+  }
+)
 
 pgDatabaseUtilityClass$methods(
   selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
@@ -700,6 +720,10 @@ pgDatabaseUtilityClass$methods(
     q <- dbSendQuery(connection,"SELECT * FROM t_export_data")
     exportDataDf <<- dbFetch(q)
     dbClearResult(q)
-    return("The data retrieved by this function is stored in the exportDataDf.")
+
+    #automatically fetch the corresponding metadata as well
+    selectVariableMetaData(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList,assessmentVariableCodeFullList,assessmentVariableCodeOriginalList)
+
+    return("The data retrieved by this function is stored in the exportDataDf with the corresponding metadata in metaDataDf.")
   }
 )

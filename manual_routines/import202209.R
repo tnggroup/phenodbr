@@ -203,7 +203,7 @@ dim(dbutil$importDataDf)
 #Warning!! there may be text columns erroneously interpreted as float from the previous insert here which will make the routine crash until they have been corrected in teh database before the next import.
 
 
-##core_neuro
+#core_neuro
 
 
 ##fourat_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
@@ -365,15 +365,170 @@ dim(dbutil$importDataDf)
 
 
 
+#neuro_case_report
+
+##ncrf1_admission_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_admission_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_admission\\.","ncrf1_admission\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_care_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_care_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_care\\.","ncrf1_care\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_cic_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_cic_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_cic\\.","ncrf1_cic\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_comorbid_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_comorbid_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_comorbid\\.","ncrf1_comorbid\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_dem_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_dem_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_dem\\.","ncrf1_dem\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_lab_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_lab_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_lab\\.","ncrf1_lab\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_newsymp_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_newsymp_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_newsymp\\.","ncrf1_newsymp\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_pre_med_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_pre_med_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_pre_med\\.","ncrf1_pre_med\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf1_vital_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf1_vital_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m1", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf1_vital\\.","ncrf1_vital\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf2_care_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf2_care_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m2", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf2_care\\.","ncrf2_care\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf2_lab_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf2_lab_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m2", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf2_lab\\.","ncrf2_lab\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf2_med_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf2_med_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m2", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf2_med\\.","ncrf2_med\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf2_newsymp_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf2_newsymp_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m2", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf2_newsymp\\.","ncrf2_newsymp\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf2_vital_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf2_vital_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m2", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf2_vital\\.","ncrf2_vital\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf3_compli_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf3_compli_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m3", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf3_compli\\.","ncrf3_compli\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ncrf3_diag_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"neuro_case_report","ncrf3_diag_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnsncrf", assessmentVersionCode = "m3", stageCode = "bl",  prefixesToExcludeRegex = list("ncrf3_diag\\.","ncrf3_diag\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+#extraction meta test - this should generate a dataframe!
+View(dbutil$selectVariableMetaData(
+  cohortCode = "covidcns",
+  instanceCode = "2022",
+  assessmentCode = "covidcnsna",
+  assessmentVersionCode = "1"
+))
+
 #extraction test - this should generate a dataframe!
+
 dbutil$selectExportData(
   cohortCode = "covidcns",
   instanceCode = "2022",
-  assessmentCode = "covidcnsdem",
-  assessmentVersionCode = "1",
+  assessmentCode = "covidcnsna",
+  assessmentVersionCode = "1"
   #assessmentItemCodeList = c("dateofbirth","dobage","ethnocorigin")
   )
 View(dbutil$exportDataDf)
+View(dbutil$metaDataDf)
+
+
+#Export of ncrf for Naomi
+dbutil$selectExportData(
+  cohortCode = "covidcns",
+  instanceCode = "2022",
+  assessmentCode = "covidcnsncrf",
+  assessmentVersionCode = "m1"
+)
+fwrite(x = dbutil$exportDataDf,file = paste0("COVIDCNS_NCRF_M1.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M1_DICT.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+
+dbutil$selectExportData(
+  cohortCode = "covidcns",
+  instanceCode = "2022",
+  assessmentCode = "covidcnsncrf",
+  assessmentVersionCode = "m2"
+)
+fwrite(x = dbutil$exportDataDf,file = paste0("COVIDCNS_NCRF_M2.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M2_DICT.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+
+dbutil$selectExportData(
+  cohortCode = "covidcns",
+  instanceCode = "2022",
+  assessmentCode = "covidcnsncrf",
+  assessmentVersionCode = "m3"
+)
+fwrite(x = dbutil$exportDataDf,file = paste0("COVIDCNS_NCRF_M3.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M3_DICT.tsv"),append = F,quote = T,sep = "\t",col.names = T)
+
+
 
 
 #Cognitron
