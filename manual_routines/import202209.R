@@ -205,7 +205,6 @@ dim(dbutil$importDataDf)
 
 #core_neuro
 
-
 ##fourat_inp_covidcns_clean - special treatment as inpatients and outpatients share instrument
 
 readImportData<-readRDS(file = file.path(qCleanedFolderPath,"core_neuro","fourat_inp_covidcns_clean.rds"))
@@ -364,6 +363,47 @@ dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode =
 dim(dbutil$importDataDf)
 
 
+#fbc
+
+##fbc_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"fbc","fbc_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cbc", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("fbc\\.","fbc\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+
+#mh_case_report
+
+##moca_inp_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"mh_case_report","moca_inp_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "moca", assessmentVersionCode = "1", stageCode = "blinp",  prefixesToExcludeRegex = list("moca_inp\\.","moca_inp\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##psy_neuro_scr_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"mh_case_report","psy_neuro_scr_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "covidcnspsyneuroscr", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("psy_neuro_scr\\.","psy_neuro_scr\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+#moca
+
+##cognitron_outp_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"moca","cognitron_outp_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "cognitron", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("cognitron_outp\\.","cognitron_outp\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##moca_outp_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"moca","moca_outp_covidcns_clean.Rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = "covidcns", instanceCode = "2022", assessmentCode = "moca", assessmentVersionCode = "1", stageCode = "bloutp",  prefixesToExcludeRegex = list("moca_outp\\.","moca_outp\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
 
 #neuro_case_report
 
@@ -500,7 +540,7 @@ View(dbutil$exportDataDf)
 View(dbutil$metaDataDf)
 
 
-#Export of ncrf for Naomi
+#Export of ncrf for Naomi - NOT INCLUDING STUDY ID!
 dbutil$selectExportData(
   cohortCode = "covidcns",
   instanceCode = "2022",
@@ -530,7 +570,7 @@ fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M3_DICT.tsv"),append =
 
 
 
-
+#OLD STUFF BELOW!
 #Cognitron
 dbutil$readImportData(dataframe = fread(file = file.path(cognitronCleanedFolderPath,"Cognitron_data_09.07.2021_CCNS_CNS01040.csv"), na.strings =c(".",NA,"NA",""), encoding = "UTF-8",check.names = T, fill = T, blank.lines.skip = T, data.table = T, nThread = 5, showProgress = F))
 head(dbutil$importDataDf)
