@@ -570,19 +570,127 @@ fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M3_DICT.tsv"),append =
 
 
 
+
+#connect again
+dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinfo$user, port=cinfo$port, password= cinfo$pw)
+
+
+#IDPs - NOT FINISHED!!
+
+#read and parse IDPs
+idpData<-covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)
+
+dbutil$readImportData(dataframe = idpData$dfIDP)
+
+
+#does not work for some reason
+# dbutil$formatImportColumnNames(deitemise = T,
+#                                prefixesToItemiseRegex = c(
+#                                  "QC_",
+#                                  "IDP_T1_SIENAX_",
+#                                  "IDP_T1_FIRST_",
+#                                  "IDP_T1_FAST_ROIs_",
+#                                  "IDP_T2_FLAIR_BIANCA_",
+#                                  "IDP_SWI_T2star_",
+#                                  "IDP_tfMRI_",
+#                                  "IDP_dMRI_TBSS_FA_",
+#                                  "IDP_dMRI_TBSS_MD_",
+#                                  "IDP_dMRI_TBSS_MO_",
+#                                  "IDP_dMRI_TBSS_L1_",
+#                                  "IDP_dMRI_TBSS_L2_",
+#                                  "IDP_dMRI_TBSS_L3_",
+#                                  "IDP_dMRI_TBSS_ICVF_",
+#                                  "IDP_dMRI_TBSS_OD_",
+#                                  "IDP_dMRI_TBSS_ISOVF_",
+#                                  "IDP_dMRI_ProbtrackX_FA_",
+#                                  "IDP_dMRI_ProbtrackX_MD_",
+#                                  "IDP_dMRI_ProbtrackX_MO_",
+#                                  "IDP_dMRI_ProbtrackX_L1_",
+#                                  "IDP_dMRI_ProbtrackX_L2_",
+#                                  "IDP_dMRI_ProbtrackX_L3_",
+#                                  "IDP_dMRI_ProbtrackX_ICVF_",
+#                                  "IDP_dMRI_ProbtrackX_OD_",
+#                                  "IDP_dMRI_ProbtrackX_ISOVF_"
+#                                )
+#                                )
+
+
+nformat <- formatStdColumnNames(columnNames = colnames(idpData$dfIDP),prefixesToItemiseRegex = c(
+  "QC_",
+  "IDP_T1_SIENAX_",
+  "IDP_T1_FIRST_",
+  "IDP_T1_FAST_ROIs_",
+  "IDP_T2_FLAIR_BIANCA_",
+  "IDP_SWI_T2star_",
+  "IDP_tfMRI_",
+  "IDP_dMRI_TBSS_FA_",
+  "IDP_dMRI_TBSS_MD_",
+  "IDP_dMRI_TBSS_MO_",
+  "IDP_dMRI_TBSS_L1_",
+  "IDP_dMRI_TBSS_L2_",
+  "IDP_dMRI_TBSS_L3_",
+  "IDP_dMRI_TBSS_ICVF_",
+  "IDP_dMRI_TBSS_OD_",
+  "IDP_dMRI_TBSS_ISOVF_",
+  "IDP_dMRI_ProbtrackX_FA_",
+  "IDP_dMRI_ProbtrackX_MD_",
+  "IDP_dMRI_ProbtrackX_MO_",
+  "IDP_dMRI_ProbtrackX_L1_",
+  "IDP_dMRI_ProbtrackX_L2_",
+  "IDP_dMRI_ProbtrackX_L3_",
+  "IDP_dMRI_ProbtrackX_ICVF_",
+  "IDP_dMRI_ProbtrackX_OD_",
+  "IDP_dMRI_ProbtrackX_ISOVF_"
+), deitemise = T)
+dbutil$columnFormat<-nformat
+colnames(dbutil$importDataDf)<-dbutil$columnFormat$names.new
+
+#fix ID
+dbutil$fixIdColumn(cohortIdColumn = "id")
+
+#dbutil$parseVariableValueLabels() #not needed
+
+#select actual columns to import
+#filterColumnsOnFormatting() #not needed
+
+#annotation tables
+dbutil$createVariableAnnotation(parseItems = T)
+
+nVarAnnotation <- merge(dbutil$variableAnnotationDf,idpData$dfIDPmeta,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
+setDT(nVarAnnotation)
+nVarAnnotation$variable_documentation<-nVarAnnotation$description
+nVarAnnotation$variable_unit<-nVarAnnotation$unit
+nVarAnnotation$variable_data_type<-trimws(nVarAnnotation$datatype)
+nVarAnnotation[variable_data_type=="int",variable_data_type:="integer"]
+nVarAnnotation[variable_data_type=="float",variable_data_type:="double precision"]
+dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","index","item_code","variable_documentation","variable_unit","variable_data_type")]))
+
+dbutil$itemAnnotationDf <- data.frame(
+  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$index),]$item_code)
+)
+  #merge(dbutil$variableAnnotationDf,idpData$dfIDP,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
+#dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[order(dbutil$itemAnnotationDf$order),]
+dbutil$itemAnnotationDf$item_text<-""
+dbutil$itemAnnotationDf$assessment_type<-"imaging"
+dbutil$itemAnnotationDf$assessment_item_type_code<-"idp"
+#dbutil$itemAnnotationDf$item_index<-dbutil$itemAnnotationDf$order
+dbutil$itemAnnotationDf$item_documentation<-""
+dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[,c("item_code","item_text","assessment_type","assessment_item_type_code","item_documentation")]
+dbutil$itemAnnotationDf <- unique(dbutil$itemAnnotationDf)
+dbutil$itemAnnotationDf$item_index <- 1:nrow(dbutil$itemAnnotationDf)
+
+#import all tables
+dbutil$importDataAsTables(temporary = F)
+
 #OLD STUFF BELOW!
-#Cognitron
-dbutil$readImportData(dataframe = fread(file = file.path(cognitronCleanedFolderPath,"Cognitron_data_09.07.2021_CCNS_CNS01040.csv"), na.strings =c(".",NA,"NA",""), encoding = "UTF-8",check.names = T, fill = T, blank.lines.skip = T, data.table = T, nThread = 5, showProgress = F))
-head(dbutil$importDataDf)
-colnames(dbutil$importDataDf)
+# #Cognitron
+# dbutil$readImportData(dataframe = fread(file = file.path(cognitronCleanedFolderPath,"Cognitron_data_09.07.2021_CCNS_CNS01040.csv"), na.strings =c(".",NA,"NA",""), encoding = "UTF-8",check.names = T, fill = T, blank.lines.skip = T, data.table = T, nThread = 5, showProgress = F))
+# head(dbutil$importDataDf)
+# colnames(dbutil$importDataDf)
 
 
 
-#IDP's - NOT FINISHED!!
-dbutil$readImportData(dataframe = covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)$importDataDf)
-dbutil$parseVariableLabels()
-dbutil$formatImportColumnNames(deitemise = T) #this fails because it will try to set colnames on the data
-#HERE!!!
+
 
 # dbutil$synchroniseVariableLabelTextForValueColumns()
 # dbutil$fixIdColumn(cohortIdColumn = "externaldatareference")

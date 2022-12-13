@@ -506,8 +506,8 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  formatImportColumnNames=function(prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, columnNameLength=30){
-    columnFormat <<- phenodbr::formatImportColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, columnNameLength = columnNameLength)
+  formatImportColumnNames=function(prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){
+    columnFormat <<- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
     colnames(importDataDf) <<- columnFormat$names.new
   }
 )
@@ -552,16 +552,32 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  createVariableAnnotation=function(){
+  createVariableAnnotation=function(parseItems=F){
     variableAnnotationDf <<- data.frame(
-      column_name=colnames(importDataDf)
+      column_name=columnFormat$names.new
     )
-    variableAnnotationDf$variable_code <<- NA_character_
+
     variableAnnotationDf$variable_original_descriptor <<- columnFormat$names.orig
-    variableAnnotationDf$item_code <<- variableAnnotationDf$column_name
-    variableAnnotationDf$variable_label <<- as.character(variableLabelsDf)
+    if(length(variableLabelsDf) == nrow(variableAnnotationDf)){
+      variableAnnotationDf$variable_label <<- as.character(variableLabelsDf)
+    } else {
+      variableAnnotationDf$variable_label <<- NA_character_
+    }
     variableAnnotationDf$index <<- 1:nrow(variableAnnotationDf)
 
+    if(parseItems){
+      variableAnnotationDf$item_code <<- sub(pattern = paste0("^([a-z1-9]+)_.*"), replacement = "\\1", x = columnFormat$names.new)
+      variableAnnotationDf$variable_code <<- sub(pattern = paste0("^.+_([a-z1-9]+)"), replacement = "\\1", x = columnFormat$names.new)
+      variableAnnotationDf$variable_code <<- ifelse(variableAnnotationDf$item_code == variableAnnotationDf$variable_code, NA_character_,variableAnnotationDf$variable_code)
+
+    } else {
+      variableAnnotationDf$item_code <<- variableAnnotationDf$column_name
+      variableAnnotationDf$variable_code <<- NA_character_
+    }
+
+    variableAnnotationDf$variable_documentation<-""
+    variableAnnotationDf$variable_unit<-NA_character_
+    variableAnnotationDf$variable_data_type<-NA_character_
   }
 )
 
@@ -598,7 +614,7 @@ pgDatabaseUtilityClass$methods(
     merged$item_code<-ifelse(multiItemsVarL,merged$item_code.y,merged$item_code.x)
     merged$variable_code<-ifelse(multiItemsVarL,merged$item_code.x,merged$variable_code)
 
-    variableAnnotationDf <<- merged[,c("column_name","item_code","variable_code","variable_original_descriptor")]
+    variableAnnotationDf <<- merged[,c("column_name","item_code","variable_code","variable_original_descriptor")] #HERE!!!! NOT DONE!!
 
     itemAnnotationDf <<- merged[,c("item_code","variable_label")]
     colnames(itemAnnotationDf) <<- c("item_code","item_text")

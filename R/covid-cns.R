@@ -30,33 +30,41 @@ covidcnsReadIDP=function(folderpathIDP,folderpathIDPMeta){
   dfIDPNames <- read.table(file = filepathIDPNames, header = T, encoding = "UTF8", sep = "\t", blank.lines.skip = T, fill = T)
   setDT(dfIDPNames)
   lFSIDPHeader <- unlist(read.table(file = filepathFSIDPHeader, header = F, encoding = "UTF8", blank.lines.skip = T, fill = T))
-  #this file has a botched formatting
-  #dfFSIDPInfo <- read.table(file = filepathFSIDPInfo, header = F, encoding = "UTF8", sep = "\t", blank.lines.skip = T, fill = T)
+  #formatting is fixed now
+  dfFSIDPInfo <- read.table(file = filepathFSIDPInfo, header = F, encoding = "UTF8", sep = "\t", blank.lines.skip = T, fill = T)
+  colnames(dfFSIDPInfo)<-c("header","unit","datatype","description")
+  setDT(dfFSIDPInfo)
 
-  lIDP <- unlist(read.table(file = filepathIDP, header = F, encoding = "UTF8", blank.lines.skip = T, fill = T))
+  #dfIDPmeta
+  dfIDPmeta <- data.frame(header=lIDPHeader)
+  dfIDPmeta$order<-1:nrow(dfIDPmeta)
+  setDT(dfIDPmeta)
+  #nrow(dfIDPmeta)
+  dfIDPmeta<-dfIDPInfo[dfIDPmeta, on=c("header")]
+  dfIDPmeta<-dfIDPmeta[dfIDPNames, on=c(header=c("IDP_name")),c('IDP','UKB_ID_name','IDP_name','IDP_cat','IDP_category') := list(i.IDP,i.UKB_ID_name,i.IDP_name,i.IDP_cat,i.IDP_category)]
 
-  #this can't be processed yet
-  lFSIDP <- unlist(read.table(file = filepathFSIDP, header = F, encoding = "UTF8", blank.lines.skip = T, fill = T))
-
-
-  dfIDP <- data.frame(header=lIDPHeader)
-  dfIDP$order<-1:nrow(dfIDP)
-  setDT(dfIDP)
-  #nrow(dfIDP)
-  dfIDP<-dfIDPInfo[dfIDP, on=c("header")]
-  dfIDP<-dfIDP[dfIDPNames, on=c(header=c("IDP_name")),c('IDP','UKB_ID_name','IDP_name','IDP_cat','IDP_category') := list(i.IDP,i.UKB_ID_name,i.IDP_name,i.IDP_cat,i.IDP_category)]
-
-  #add visit? value - TEMPORARY!
-  lIDP <- c(lIDP[1:1],NA,lIDP[2:length(lIDP)])
-  dfIDP$d<-lIDP
-
-  #transpose data to column variable dataframe
-  dataToImport<-as.data.frame(matrix(data = NA,nrow = 0,ncol = nrow(dfIDP)))
-  dataToImport[1,]<-dfIDP$d
-  colnames(dataToImport)<-dfIDP$header
+  #dfFSIDPmeta
+  dfFSIDPmeta <- data.frame(header=lFSIDPHeader)
+  dfFSIDPmeta$order<-1:nrow(dfFSIDPmeta)
+  setDT(dfFSIDPmeta)
+  #nrow(dfFSIDPmeta)
+  dfFSIDPmeta<-dfFSIDPInfo[dfFSIDPmeta, on=c("header")]
+  dfFSIDPmeta<-dfFSIDPmeta[dfIDPNames, on=c(header=c("IDP_name")),c('IDP','UKB_ID_name','IDP_name','IDP_cat','IDP_category') := list(i.IDP,i.UKB_ID_name,i.IDP_name,i.IDP_cat,i.IDP_category)]
 
 
-  return(list(importDataDf=dataToImport))
+  dfIDP <- read.table(file = filepathIDP, header = F, encoding = "UTF8", blank.lines.skip = T, fill = T)
+  #add visit (NA)? value - TEMPORARY?
+  dfIDP <- cbind(dfIDP[,1],NA,dfIDP[,2:ncol(dfIDP)])
+  #lIDP <- c(lIDP[1:1],NA,lIDP[2:length(lIDP)])
+  colnames(dfIDP)<-dfIDPmeta$header
+
+  #this can't be processed yet - maybe now after newly formatted info file?
+  dfFSIDP <- read.table(file = filepathFSIDP, header = F, encoding = "UTF8", blank.lines.skip = T, fill = T)
+  #add visit (NA)? value - TEMPORARY?
+  dfFSIDP <- cbind(dfFSIDP[,1],NA,dfFSIDP[,2:ncol(dfFSIDP)])
+  colnames(dfFSIDP)<-dfFSIDPmeta$header
+
+  return(list(dfIDPmeta=dfIDPmeta,dfFSIDPmeta=dfFSIDPmeta,dfIDP=dfIDP,dfFSIDP=dfFSIDP))
 
 }
 
