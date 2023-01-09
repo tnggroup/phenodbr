@@ -579,6 +579,11 @@ dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinf
 
 #read and parse IDPs
 idpData<-covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)
+idpData$dfIDP$ID<-covidcnsParseIDColumn(IDs = idpData$dfIDP$ID)
+idpData$dfFSIDP$ID<-covidcnsParseIDColumn(IDs = idpData$dfFSIDP$ID)
+
+if(any(nchar(idpData$dfIDP$ID)!=8)) warning("There are IDs with length != 8 (IDP)")
+if(any(nchar(idpData$dfFSIDP$ID)!=8)) warning("There are IDs with length != 8 (FSIDP)")
 
 dbutil$readImportData(dataframe = idpData$dfIDP)
 
@@ -679,7 +684,7 @@ dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[,c("item_code","item_text","ass
 dbutil$itemAnnotationDf <- unique(dbutil$itemAnnotationDf)
 dbutil$itemAnnotationDf$item_index <- 1:nrow(dbutil$itemAnnotationDf)
 
-#import all tables
+#import all tables - FIX THE SQL CODE FOR THIS!!
 dbutil$importDataAsTables(temporary = F)
 
 #OLD STUFF BELOW!
