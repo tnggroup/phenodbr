@@ -344,25 +344,34 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  importDataAsTables=function(temporary = T, itemAnnotation=T, variableAnnotation=T, variableValueLabels=T){
+  importDataAsTables=function(temporary = T, itemAnnotation=T, variableAnnotation=T, variableValueLabels=T, excludeColIndexFrom=NULL, excludeColIndexTo=NULL){
 
-    if(!is.null(importDataDf)){
+    if(!is.null(nrow(importDataDf))){ #working null check for object
       #main import data
       name<-"_import_data_df"
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
-      dbCreateTable(conn = connection, name = name, fields = importDataDf, temporary = temporary)
-      dbAppendTable(conn = connection, name = name, value = importDataDf)
+      if(!is.null(excludeColIndexFrom)){
+        if(is.null(excludeColIndexTo)) excludeColIndexTo=ncol(importDataDf)
+        colIndices <- 1:(excludeColIndexFrom-1)
+        if(excludeColIndexTo < ncol(importDataDf)) colIndices <- c(colIndices,excludeColIndexTo:ncol(importDataDf))
+        tempImport<-importDataDf[,colIndices]
+        dbCreateTable(conn = connection, name = name, fields = tempImport, temporary = temporary)
+        dbAppendTable(conn = connection, name = name, value = tempImport)
+      } else {
+        dbCreateTable(conn = connection, name = name, fields = importDataDf, temporary = temporary)
+        dbAppendTable(conn = connection, name = name, value = importDataDf)
+      }
     }
 
     #itemAnnotation
     name<-"_item_annotation_df"
-    if(itemAnnotation){
+    if(itemAnnotation & !is.null(nrow(itemAnnotationDf))){
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
       dbCreateTable(conn = connection, name = name, fields = itemAnnotationDf, temporary = temporary)
       dbAppendTable(conn = connection, name = name, value = itemAnnotationDf)
     }
 
-    if(variableAnnotation){
+    if(variableAnnotation & !is.null(nrow(variableAnnotationDf))){
       #variableAnnotation
       name<-"_variable_annotation_df"
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
@@ -370,7 +379,7 @@ pgDatabaseUtilityClass$methods(
       dbAppendTable(conn = connection, name = name, value = variableAnnotationDf)
     }
 
-    if(variableValueLabels){
+    if(variableValueLabels & !is.null(nrow(variableValueLabelsDf))){
       #variableValueLabels
       name<-"_variable_value_labels_df"
       if(dbExistsTable(conn = connection, name = name)) dbRemoveTable(conn = connection, name = name, temporary= temporary)
@@ -566,8 +575,8 @@ pgDatabaseUtilityClass$methods(
     variableAnnotationDf$index <<- 1:nrow(variableAnnotationDf)
 
     if(parseItems){
-      variableAnnotationDf$item_code <<- sub(pattern = paste0("^([a-z1-9]+)_.*"), replacement = "\\1", x = columnFormat$names.new)
-      variableAnnotationDf$variable_code <<- sub(pattern = paste0("^.+_([a-z1-9]+)"), replacement = "\\1", x = columnFormat$names.new)
+      variableAnnotationDf$item_code <<- sub(pattern = paste0("^([a-z0-9]+)_.*"), replacement = "\\1", x = columnFormat$names.new)
+      variableAnnotationDf$variable_code <<- sub(pattern = paste0("^.+_([a-z0-9]+)"), replacement = "\\1", x = columnFormat$names.new)
       variableAnnotationDf$variable_code <<- ifelse(variableAnnotationDf$item_code == variableAnnotationDf$variable_code, NA_character_,variableAnnotationDf$variable_code)
 
     } else {
@@ -628,6 +637,37 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
+  castVariablesAsAnnotated=function(){
+    rtypes <- sapply(importDataDf,typeof)
+    for(iCol in 1:ncol(importDataDf)){
+      #iCol<-1
+      cAn<-variableAnnotationDf[variableAnnotationDf$column_name==colnames(importDataDf)[iCol],]
+      if(is.na(cAn[1,]$variable_data_type)) next
+      if(
+        (rtypes[iCol]=='character' & nrow(cAn)>0 & !(cAn[1,]$variable_data_type=="text" | cAn[1,]$variable_data_type=="character varying")) #character
+        |
+        (rtypes[iCol]=='double' & nrow(cAn)>0 & !(cAn[1,]$variable_data_type=="double precision")) #double
+        |
+        (rtypes[iCol]=='integer' & nrow(cAn)>0 & !(cAn[1,]$variable_data_type=="integer")) #integer
+        ){
+        cat("\n",cAn$item_code," ", cAn$variable_code)
+        #test - new type
+        #cat(typeof(as.numeric(dbutil$importDataDf[,iCol])))
+        if(cAn$variable_data_type=="integer"){
+          importDataDf[,iCol] <<- as.integer(importDataDf[,iCol])
+        } else if (cAn$variable_data_type=="double precision"){
+          importDataDf[,iCol] <<- as.numeric(importDataDf[,iCol])
+        }
+
+        cat("\nNew type: ",typeof(dbutil$importDataDf[,iCol]))
+
+      } #numeric types will be cast as part of the database insert later also
+    }
+
+  }
+)
+
+pgDatabaseUtilityClass$methods(
   filterColumnsOnFormatting=function(){
     importDataDf <<- importDataDf[,columnFormat$colsSelect]
     variableLabelsDf <<- variableLabelsDf[columnFormat$colsSelect]
@@ -682,7 +722,10 @@ pgDatabaseUtilityClass$methods(
     createVariableAnnotation()
 
     #update item categorisation from variable label texts, create item annotation
-    if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead)
+    if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
+
+    #NEW!!! cast according to variable annotation - based on amended variable annotations with new data types
+    castVariablesAsAnnotated()
 
     #import all tables
     if(prepare) importDataAsTables()

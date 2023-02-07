@@ -14,7 +14,7 @@ qCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-Sha
 
 cognitronCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/TNG-Public - ilovecovidcns - ilovecovidcns/data/cognitron",mustWork = T)
 
-folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/TRAVEL_processed")
+folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202301")
 folderpathIDPMeta<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/IDPs_44k")
 
 
@@ -585,6 +585,8 @@ idpData$dfFSIDP$ID<-covidcnsParseIDColumn(IDs = idpData$dfFSIDP$ID)
 if(any(nchar(idpData$dfIDP$ID)!=8)) warning("There are IDs with length != 8 (IDP)")
 if(any(nchar(idpData$dfFSIDP$ID)!=8)) warning("There are IDs with length != 8 (FSIDP)")
 
+
+#Standard IDPs
 dbutil$readImportData(dataframe = idpData$dfIDP)
 
 
@@ -620,7 +622,7 @@ dbutil$readImportData(dataframe = idpData$dfIDP)
 #                                )
 
 
-nformat <- formatStdColumnNames(columnNames = colnames(idpData$dfIDP),prefixesToItemiseRegex = c(
+nformat <- formatStdColumnNames(columnNames = colnames(dbutil$importDataDf),prefixesToItemiseRegex = c(
   "QC_",
   "IDP_T1_SIENAX_",
   "IDP_T1_FIRST_",
@@ -670,6 +672,8 @@ nVarAnnotation[variable_data_type=="int",variable_data_type:="integer"]
 nVarAnnotation[variable_data_type=="float",variable_data_type:="double precision"]
 dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","index","item_code","variable_documentation","variable_unit","variable_data_type")]))
 
+dbutil$castVariablesAsAnnotated()
+
 dbutil$itemAnnotationDf <- data.frame(
   item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$index),]$item_code)
 )
@@ -684,8 +688,141 @@ dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[,c("item_code","item_text","ass
 dbutil$itemAnnotationDf <- unique(dbutil$itemAnnotationDf)
 dbutil$itemAnnotationDf$item_index <- 1:nrow(dbutil$itemAnnotationDf)
 
-#import all tables - FIX THE SQL CODE FOR THIS!!
-dbutil$importDataAsTables(temporary = F)
+#check single variable items
+grep(pattern = "_",x = dbutil$variableAnnotationDf$column_name, value = T, fixed = T, invert = T)
+
+#import all tables
+dbutil$importDataAsTables(temporary = T)
+
+#perform database preparation procedures for import
+dbutil$prepareImport(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'idpukbb', assessmentVersionCode = '2022', cohortIdColumn = 'id')
+
+#perform database import
+dbutil$importData(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'idpukbb', assessmentVersionCode = '2022', stageCode = 'bl', doAnnotate = T, addIndividuals = T, doInsert = T)
+
+
+#FS IDPs
+dbutil$readImportData(dataframe = idpData$dfFSIDP)
+
+nformat <- formatStdColumnNames(columnNames = colnames(dbutil$importDataDf),prefixesToItemiseRegex = c(
+  "aseg_global_intensity_",
+  "aseg_global_volume_",
+  "aseg_global_volume-ratio_",
+  "aseg_lh_intensity_",
+  "aseg_lh_number_",
+  "aseg_lh_volume_",
+  "aseg_rh_intensity_",
+  "aseg_rh_number_",
+  "aseg_rh_volume",
+  "AmygNuclei_lh_",
+  "AmygNuclei_rh_",
+  "HippSubfield_lh_",
+  "HippSubfield_rh_",
+  "ThalamNuclei_lh",
+  "ThalamNuclei_rh",
+  "Brainstem_global_volume_",
+  "aparc-Desikan_lh_area_",
+  "aparc-Desikan_lh_thickness_",
+  "aparc-Desikan_lh_volume_",
+  "aparc-Desikan_rh_area_",
+  "aparc-Desikan_rh_thickness_",
+  "aparc-Desikan_rh_volume_",
+  "aparc-pial_lh_area_",
+  "aparc-pial_rh_area_",
+  "wg_lh_intensity-contrast_",
+  "wg_rh_intensity-contrast_",
+  "BA-exvivo_lh_area_",
+  "BA-exvivo_lh_thickness_",
+  "BA-exvivo_lh_volume_",
+  "BA-exvivo_rh_area_",
+  "BA-exvivo_rh_thickness_",
+  "BA-exvivo_rh_volume_",
+  "aparc-DKTatlas_lh_area_",
+  "aparc-DKTatlas_lh_thickness_",
+  "aparc-DKTatlas_lh_volume_",
+  "aparc-DKTatlas_rh_area_",
+  "aparc-DKTatlas_rh_thickness_",
+  "aparc-DKTatlas_rh_volume_",
+  "aparc-a2009s_lh_area_",
+  "aparc-a2009s_lh_thickness_",
+  "aparc-a2009s_lh_volume_",
+  "aparc-a2009s_rh_area_",
+  "aparc-a2009s_rh_thickness_",
+  "aparc-a2009s_rh_volume_"
+), deitemise = T)
+dbutil$columnFormat<-nformat
+colnames(dbutil$importDataDf)<-dbutil$columnFormat$names.new
+
+#fix ID
+dbutil$fixIdColumn(cohortIdColumn = "id")
+
+#annotation tables
+dbutil$createVariableAnnotation(parseItems = T)
+
+nVarAnnotation <- merge(dbutil$variableAnnotationDf,idpData$dfIDPmeta,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
+setDT(nVarAnnotation)
+nVarAnnotation$variable_documentation<-nVarAnnotation$description
+nVarAnnotation$variable_unit<-nVarAnnotation$unit
+nVarAnnotation$variable_data_type<-trimws(nVarAnnotation$datatype)
+nVarAnnotation[variable_data_type=="int",variable_data_type:="integer"]
+nVarAnnotation[variable_data_type=="float",variable_data_type:="double precision"]
+dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","index","item_code","variable_documentation","variable_unit","variable_data_type")]))
+
+dbutil$castVariablesAsAnnotated()
+
+dbutil$itemAnnotationDf <- data.frame(
+  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$index),]$item_code)
+)
+#merge(dbutil$variableAnnotationDf,idpData$dfIDP,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
+#dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[order(dbutil$itemAnnotationDf$order),]
+dbutil$itemAnnotationDf$item_text<-""
+dbutil$itemAnnotationDf$assessment_type<-"imaging"
+dbutil$itemAnnotationDf$assessment_item_type_code<-"idp"
+#dbutil$itemAnnotationDf$item_index<-dbutil$itemAnnotationDf$order
+dbutil$itemAnnotationDf$item_documentation<-""
+dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[,c("item_code","item_text","assessment_type","assessment_item_type_code","item_documentation")]
+dbutil$itemAnnotationDf <- unique(dbutil$itemAnnotationDf)
+dbutil$itemAnnotationDf$item_index <- 1:nrow(dbutil$itemAnnotationDf)
+
+#check single variable items
+grep(pattern = "_",x = dbutil$variableAnnotationDf$column_name, value = T, fixed = T, invert = T)
+
+#test
+# name<-"_import_data_df"
+# if(dbExistsTable(conn = dbutil$connection, name = name)) dbRemoveTable(conn = dbutil$connection, name = name, temporary= F)
+# excludeColIndexFrom <- 2
+# excludeColIndexTo <- 500
+#
+# if(!is.null(excludeColIndexFrom)){
+#   if(is.null(excludeColIndexTo)) excludeColIndexTo=ncol(importDataDf)
+#   colIndices <- 1:(excludeColIndexFrom-1)
+#   if(excludeColIndexTo < ncol(dbutil$importDataDf)) colIndices <- c(colIndices,excludeColIndexTo:ncol(dbutil$importDataDf))
+#   tempImport<-dbutil$importDataDf[,colIndices]
+#   dbCreateTable(conn = dbutil$connection, name = name, fields = tempImport, temporary = F)
+#   dbAppendTable(conn = dbutil$connection, name = name, value = tempImport)
+# } else {
+#   dbCreateTable(conn = dbutil$connection, name = name, fields = importDataDf, temporary = F)
+#   dbAppendTable(conn = dbutil$connection, name = name, value = importDataDf)
+# }
+
+
+#import all tables  -should be 1275 columns
+dbutil$importDataAsTables(temporary = T,excludeColIndexFrom = 501) #Import too big for one table import
+
+#perform database preparation procedures for import
+dbutil$prepareImport(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'fsidpukbb', assessmentVersionCode = '2022', cohortIdColumn = 'id')
+
+#perform database import
+dbutil$importData(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'fsidpukbb', assessmentVersionCode = '2022', stageCode = 'bl', doAnnotate = T, addIndividuals = T, doInsert = T)
+
+#import all tables again for the rest of the columns - This seems to work now!
+dbutil$importDataAsTables(temporary = T,excludeColIndexFrom = 2, excludeColIndexTo = 500) #Import too big for one table import
+
+#perform database preparation procedures for import
+dbutil$prepareImport(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'fsidpukbb', assessmentVersionCode = '2022', cohortIdColumn = 'id')
+
+#perform database import
+dbutil$importData(cohortCode = 'covidcns', instanceCode = '2022', assessmentCode = 'fsidpukbb', assessmentVersionCode = '2022', stageCode = 'bl', doAnnotate = T, addIndividuals = T, doInsert = T)
 
 #OLD STUFF BELOW!
 # #Cognitron
