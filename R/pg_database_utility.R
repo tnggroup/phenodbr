@@ -584,9 +584,9 @@ pgDatabaseUtilityClass$methods(
       variableAnnotationDf$variable_code <<- NA_character_
     }
 
-    variableAnnotationDf$variable_documentation<-""
-    variableAnnotationDf$variable_unit<-NA_character_
-    variableAnnotationDf$variable_data_type<-NA_character_
+    variableAnnotationDf$variable_documentation <<- ""
+    variableAnnotationDf$variable_unit <<- NA_character_
+    variableAnnotationDf$variable_data_type <<- NA_character_
   }
 )
 
@@ -623,7 +623,7 @@ pgDatabaseUtilityClass$methods(
     merged$item_code<-ifelse(multiItemsVarL,merged$item_code.y,merged$item_code.x)
     merged$variable_code<-ifelse(multiItemsVarL,merged$item_code.x,merged$variable_code)
 
-    variableAnnotationDf <<- merged[,c("column_name","item_code","variable_code","variable_original_descriptor")] #HERE!!!! NOT DONE!!
+    variableAnnotationDf[variableAnnotationDf$column_name %in% merged$column_name,c("column_name","variable_original_descriptor","variable_label", "index","item_code","variable_code")] <<- merged[,c("column_name","variable_original_descriptor","variable_label", "index","item_code","variable_code")]
 
     itemAnnotationDf <<- merged[,c("item_code","variable_label")]
     colnames(itemAnnotationDf) <<- c("item_code","item_text")
@@ -635,6 +635,22 @@ pgDatabaseUtilityClass$methods(
 
   }
 )
+
+
+pgDatabaseUtilityClass$methods(
+  amendVariableAnnotationDataTypeIntegerFromData=function(){
+    rtypes <- sapply(importDataDf,typeof)
+    for(iVar in 1:nrow(variableAnnotationDf)){
+      #iVar <- 4
+      cVar <- variableAnnotationDf[iVar,]
+      if(rtypes[cVar$column_name]=="double" & !inherits(importDataDf[,cVar$column_name],c("Date","POSIXt"))){
+        if(all(na.omit(importDataDf[,cVar$column_name]%%1==0))) variableAnnotationDf[iVar,"variable_data_type"] <<- "integer"
+      }
+    }
+
+  }
+)
+
 
 pgDatabaseUtilityClass$methods(
   castVariablesAsAnnotated=function(){
@@ -659,7 +675,7 @@ pgDatabaseUtilityClass$methods(
           importDataDf[,iCol] <<- as.numeric(importDataDf[,iCol])
         }
 
-        cat("\nNew type: ",typeof(dbutil$importDataDf[,iCol]))
+        cat("\nNew type: ",typeof(importDataDf[,iCol]))
 
       } #numeric types will be cast as part of the database insert later also
     }
@@ -724,7 +740,10 @@ pgDatabaseUtilityClass$methods(
     #update item categorisation from variable label texts, create item annotation
     if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
 
-    #NEW!!! cast according to variable annotation - based on amended variable annotations with new data types
+    #determine data type from data
+    dbutil$amendVariableAnnotationDataTypeIntegerFromData()
+
+    #cast according to variable annotation - based on amended variable annotations with new data types
     castVariablesAsAnnotated()
 
     #import all tables
