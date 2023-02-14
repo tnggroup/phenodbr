@@ -13,7 +13,8 @@ pgDatabaseUtilityClass <- setRefClass("pgDatabaseUtility",
                                                connection = "ANY",
                                                importDataDf = "ANY",
                                                exportDataDf = "ANY",
-                                               metaDataDf = "ANY",
+                                               itemMetaDataDf = "ANY",
+                                               variableMetaDataDf = "ANY",
                                                itemAnnotationDf = "ANY",
                                                variableAnnotationDf = "ANY",
                                                valueAnnotationDf = "ANY",
@@ -759,9 +760,17 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  selectVariableMetaData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
-    q <- dbSendQuery(connection,
-                     paste0("SELECT * FROM met.select_assessment_item_variable_meta(
+  selectVariableMetaData=function(cohortCode,instanceCode,assessmentCode=NULL,assessmentVersionCode=NULL,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+
+    sQuery <- ""
+    lArguments <- c()
+    if(is.null(assessmentCode) | is.null(assessmentVersionCode)){
+      sQuery <- paste0("SELECT * FROM met.select_assessment_item_variable_meta(
+                        cohort_code => $1,
+                      	instance_code => $2 )")
+      lArguments <- list(cohortCode,instanceCode)
+    } else {
+      sQuery <- paste0("SELECT * FROM met.select_assessment_item_variable_meta(
                         cohort_code => $1,
                       	instance_code => $2,
                       	assessment_code => $3,
@@ -769,28 +778,75 @@ pgDatabaseUtilityClass$methods(
                       	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
                       	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
                       	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
-                      )"),
-                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+                      )")
+      lArguments <- list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+    }
+
+    q <- dbSendQuery(connection,
+                     sQuery,
+                     lArguments
     )
-    metaDataDf <<- dbFetch(q)
+
+    variableMetaDataDf <<- dbFetch(q)
     dbClearResult(q)
-    return(metaDataDf)
+    return(variableMetaDataDf)
+  }
+)
+
+pgDatabaseUtilityClass$methods(
+  selectItemMetaData=function(cohortCode,instanceCode,assessmentCode=NULL,assessmentVersionCode=NULL,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+
+    sQuery <- ""
+    lArguments <- c()
+    if(is.null(assessmentCode) | is.null(assessmentVersionCode)){
+      sQuery <- paste0("SELECT * FROM met.select_assessment_item_meta(
+                        cohort_code => $1,
+                      	instance_code => $2 )")
+      lArguments <- list(cohortCode,instanceCode)
+    } else {
+      sQuery <- paste0("SELECT * FROM met.select_assessment_item_meta(
+                        cohort_code => $1,
+                      	instance_code => $2,
+                      	assessment_code => $3,
+                      	assessment_version_code => $4,
+                      	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
+                      	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
+                      	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
+                      )")
+      lArguments <- list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+    }
+
+    q <- dbSendQuery(connection,
+                     sQuery,
+                     lArguments
+    )
+
+    itemMetaDataDf <<- dbFetch(q)
+    dbClearResult(q)
+    return(itemMetaDataDf)
   }
 )
 
 pgDatabaseUtilityClass$methods(
   selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+
+    sQuery <- ""
+    lArguments <- c()
+
+    sQuery <- paste0("SELECT * FROM coh.create_current_assessment_item_variable_tview(
+                      cohort_code => $1,
+                    	instance_code => $2,
+                    	assessment_code => $3,
+                    	assessment_version_code => $4,
+                    	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
+                    	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
+                    	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
+                    )")
+    lArguments <- list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+
     q <- dbSendQuery(connection,
-                     paste0("SELECT * FROM coh.create_current_assessment_item_variable_tview(
-                        cohort_code => $1,
-                      	instance_code => $2,
-                      	assessment_code => $3,
-                      	assessment_version_code => $4,
-                      	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
-                      	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
-                      	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
-                      )"),
-                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
+                     sQuery,
+                     lArguments
                      )
     res<-dbFetch(q)
     dbClearResult(q)
@@ -801,7 +857,8 @@ pgDatabaseUtilityClass$methods(
 
     #automatically fetch the corresponding metadata as well
     selectVariableMetaData(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList,assessmentVariableCodeFullList,assessmentVariableCodeOriginalList)
+    selectItemMetaData(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList,assessmentVariableCodeFullList,assessmentVariableCodeOriginalList)
 
-    return("The data retrieved by this function is stored in the exportDataDf with the corresponding metadata in metaDataDf.")
+    return("The data retrieved by this function is stored in the exportDataDf with the corresponding metadata in itemMetaDataDf and variableMetaDataDf.")
   }
 )
