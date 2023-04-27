@@ -26,6 +26,7 @@ df<-dbutil$importDataDf
 #View(df)
 setDT(df,key = "code")
 df[,legacy_code:=(substr(code,1,4))]
+df[,legacy_code_counter:=as.integer(substr(code,5,6))]
 df.phenotypes <- unique(df[,legacy_code:=(substr(code,1,4))][,c("phenotype_id","phenotype_type","phenotype","phenotype_id","legacy_code","category_name")] )
 #setkeyv(df.phenotypes,cols = c("phenotype_id"))
 #View(df.phenotypes)
@@ -53,33 +54,88 @@ df.phenotypes$code<-unlist(n_code_filtered)
 
 #add all phenotypes in order according to the original id
 phenotypeIdMap<-c()
-for(iP in 99:nrow(df.phenotypes)){
+for(iP in 1:nrow(df.phenotypes)){
   #iP <- 1
   cP <- df.phenotypes[iP,]
+  nId<-NULL
+  pcId<-NULL
+  cat("\n",cP$phenotype)
+
+
+  #get category id
+  q <- dbSendQuery(dbutil$connection,
+                   "SELECT pc.id FROM met.phenotype_category pc WHERE pc.code=$1",
+                   list(
+                     cP$category_name
+                   ))
+  res<-dbFetch(q)
+  pcId<-as.integer(res[[1]])
 
   q <- dbSendQuery(dbutil$connection,
-                   "INSERT INTO met.phenotype(phenotype_type,code,sort_code,name) VALUES($1,$2,$3,$4) RETURNING id",
+                   "SELECT p.id FROM met.phenotype p WHERE p.code=$1",
                    list(
-                     ifelse(cP$phenotype_type=='biomarker','bio',
-                            ifelse(cP$phenotype_type=='disorder','dis','trt')
-                            ),
-                     cP$code,
-                     cP$legacy_code,
-                     paste0(toupper(substr(cP$phenotype,1,1)),substr(cP$phenotype,2,nchar(cP$phenotype)))
-                     ))
+                     cP$code
+                   ))
   res<-dbFetch(q)
   nId<-as.integer(res[[1]])
+
+  if(length(nId)<1){
+    q <- dbSendQuery(dbutil$connection,
+                     "INSERT INTO met.phenotype(phenotype_type,code,sort_code,name) VALUES($1,$2,$3,$4) RETURNING id",
+                     list(
+                       ifelse(cP$phenotype_type=='biomarker','bio',
+                              ifelse(cP$phenotype_type=='disorder','dis','trt')
+                              ),
+                       cP$code,
+                       cP$legacy_code,
+                       paste0(toupper(substr(cP$phenotype,1,1)),substr(cP$phenotype,2,nchar(cP$phenotype)))
+                       ))
+    res<-try(dbFetch(q))
+    nId<-as.integer(res[[1]])
+  }
+
+  if(length(pcId)>0){
+    q <- dbSendQuery(dbutil$connection,
+                     "INSERT INTO met.phenotype_phenotype_category(phenotype,phenotype_category) VALUES($1,$2) ON CONFLICT DO NOTHING",
+                     list(
+                       nId,
+                       pcId
+                     ))
+  }
+
   dbClearResult(q)
   phenotypeIdMap[cP$phenotype_id]<-nId
 
-  #TODO! Add existing category
-
 }
 
-#add all traits while adding the gwases and keep a temporary id of the original phenotypes
+#add all trait GWASs
 for(iGWAS in 1:nrow(df)){
   #iGWAS <- 1
   cGWAS <- df[iGWAS,]
+  cSumId<-NULL
+
+  q <- dbSendQuery(dbutil$connection,
+                   "SELECT s.id FROM met.summary s WHERE s.sort_code=$1 AND s.sort_counter=$2",
+                   list(
+                     cGWAS$legacy_code,
+                     cGWAS$legacy_code_counter
+                   ))
+  res<-dbFetch(q)
+  cGWASId<-as.integer(res[[1]])
+  if(length(cGWASId)<1){
+    q <- dbSendQuery(dbutil$connection,
+                     "INSERT INTO s.summary(sort_code,sort_counter,name,summary_type,sex,is_meta_analysis,phenotype,phenotype_assessment_type,ancestry_population,ancestry_details,reference,documentation) VALUES($1,$2,$3,$4) RETURNING id ON CONFLICT DO NOTHING",
+                     list(
+                       ifelse(cP$phenotype_type=='biomarker','bio',
+                              ifelse(cP$phenotype_type=='disorder','dis','trt')
+                       ),
+                       cP$code,
+                       cP$legacy_code,
+                       paste0(toupper(substr(cP$phenotype,1,1)),substr(cP$phenotype,2,nchar(cP$phenotype)))
+                     ))
+    res<-try(dbFetch(q))
+    nId<-as.integer(res[[1]])
+  }
 
 }
 
