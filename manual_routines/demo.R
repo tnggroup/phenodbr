@@ -62,7 +62,8 @@ dbutil$selectExportData(
   cohortCode = cohortSetting,
   instanceCode = cohortInstanceSetting,
   assessmentCode = "covidcnsdem",
-  assessmentVersionCode = "1"
+  assessmentVersionCode = "1",
+  joinSec = T
   #assessmentItemCodeList = c("dateofbirth","dobage","ethnocorigin")
 )
 View(dbutil$exportDataDf)
@@ -73,7 +74,8 @@ dbutil$selectExportData(
   cohortCode = cohortSetting,
   instanceCode = cohortInstanceSetting,
   assessmentCode = "idpukbb",
-  assessmentVersionCode = "2022"
+  assessmentVersionCode = "2022",
+  joinSec = T
   #assessmentItemCodeList = c('visit','qc','idpt1sienax','idp1first','idp1fastrois')
 )
 View(dbutil$exportDataDf)

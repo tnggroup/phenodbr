@@ -828,7 +828,7 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL){
+  selectExportData=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,assessmentItemCodeList=NULL,assessmentVariableCodeFullList=NULL,assessmentVariableCodeOriginalList=NULL,joinSec=FALSE){
 
     sQuery <- ""
     lArguments <- c()
@@ -840,7 +840,8 @@ pgDatabaseUtilityClass$methods(
                     	assessment_version_code => $4,
                     	assessment_item_code => ",asPgsqlTextArray(assessmentItemCodeList),",
                     	assessment_variable_code_full => ",asPgsqlTextArray(assessmentVariableCodeFullList),",
-                    	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),"
+                    	assessment_variable_code_original => ",asPgsqlTextArray(assessmentVariableCodeOriginalList),",
+                    	join_sec => ",joinSec,"
                     )")
     lArguments <- list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode)
 
