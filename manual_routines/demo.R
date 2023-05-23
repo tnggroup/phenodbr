@@ -68,3 +68,16 @@ dbutil$selectExportData(
 View(dbutil$exportDataDf)
 View(dbutil$itemMetaDataDf)
 View(dbutil$variableMetaDataDf)
+
+dbutil$selectExportData(
+  cohortCode = cohortSetting,
+  instanceCode = cohortInstanceSetting,
+  assessmentCode = "idpukbb",
+  assessmentVersionCode = "2022"
+  #assessmentItemCodeList = c('visit','qc','idpt1sienax','idp1first','idp1fastrois')
+)
+View(dbutil$exportDataDf)
+View(dbutil$itemMetaDataDf)
+View(dbutil$variableMetaDataDf)
+
+
