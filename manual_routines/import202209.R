@@ -14,7 +14,7 @@ qCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-Sha
 
 cognitronCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/TNG-Public - ilovecovidcns - ilovecovidcns/data/cognitron",mustWork = T)
 
-folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202301")
+folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202305")
 folderpathIDPMeta<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/IDPs_44k")
 
 cohortSetting <- "covidcns"
@@ -570,22 +570,79 @@ fwrite(x = dbutil$exportDataDf,file = paste0("COVIDCNS_NCRF_M3.tsv"),append = F,
 fwrite(x = dbutil$metaDataDf,file = paste0("COVIDCNS_NCRF_M3_DICT.tsv"),append = F,quote = T,sep = "\t",col.names = T)
 
 
-
-
 #connect again
 dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinfo$user, port=cinfo$port, password= cinfo$pw)
 
 
 #IDPs
 
-#read and parse IDPs
+#read and parse IDPs - also pads wrongly assigned numeric part of the ID with additional preceding 0s
+#DEPRECATED - if the first digit is 1 only.
 idpData<-covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)
-idpData$dfIDP$ID<-covidcnsParseIDColumn(IDs = idpData$dfIDP$ID)
-idpData$dfFSIDP$ID<-covidcnsParseIDColumn(IDs = idpData$dfFSIDP$ID)
 
-if(any(nchar(idpData$dfIDP$ID)!=8)) warning("There are IDs with length != 8 (IDP)")
-if(any(nchar(idpData$dfFSIDP$ID)!=8)) warning("There are IDs with length != 8 (FSIDP)")
+#Nontab data
+nontabMeta<-data.frame(code=c(
+  "bb_IDP_all_align_to_T1",
+  "bb_IDP_diff_autoPtx",
+  "bb_IDP_diff_eddy_outliers",
+  "bb_IDP_diff_TBSS",
+  "bb_IDP_func_head_motion",
+  "bb_IDP_func_task_activation",
+  "bb_IDP_func_TSNR",
+  "bb_IDP_subject_centre",
+  "bb_IDP_subject_COG_table",
+  "bb_IDP_SWI_T2star",
+  "bb_IDP_T1_align_to_std",
+  "bb_IDP_T1_FIRST_vols",
+  "bb_IDP_T1_GM_parcellation",
+  "bb_IDP_T1_noise_ratio",
+  "bb_IDP_T1_SIENAX",
+  "bb_IDP_T2_FLAIR_WMH"))
+#nontabMeta$filePath<-file.path(folderpathIDP,paste0(nontabMeta$code,".txt"))
+rownames(nontabMeta)<-nontabMeta$code
 
+#View(table(idpData$dfIDP$ID))
+
+allNontab<-NULL
+for(iNontab in 1:length(idpData$lNontab)){
+  #iNontab<-2
+  nameCNontab<-names(idpData$lNontab)[iNontab]
+  cNontab<-as.data.frame(idpData$lNontab[iNontab][[1]])
+  colnames(cNontab)<-ifelse(colnames(cNontab)!="ID",paste0(nameCNontab,".",colnames(cNontab)),colnames(cNontab))
+  setDT(cNontab)
+  if(is.null(allNontab)) {
+    allNontab<-cNontab
+    #setDT(allNontab)
+    #setkeyv(allNontab, cols = c("ID"))
+  } else {
+    #setDT(cNontab)
+    #setkeyv(cNontab, cols = c("ID"))
+    #allNontab<-merge(x = allNontab, y = cNontab, by = "ID", all = T)
+    allNontab<-cbind(allNontab,cNontab[,!c("ID")])
+  }
+}
+
+#colnames(allNontab)
+
+dbutil$readImportData(dataframe = allNontab)
+dbutil$formatImportColumnNames(deitemise = T,prefixesToItemiseRegex = paste0(nontabMeta$code,"\\.")) #not sure why this does not work
+# dbutil$columnFormat <- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
+# colnames(importDataDf) <<- columnFormat$names.new
+dbutil$fixIdColumn(cohortIdColumn = "id")
+
+#annotation tables
+dbutil$createVariableAnnotation(parseItems = T)
+
+#import all tables
+dbutil$importDataAsTables(temporary = T)
+#perform database preparation procedures for importq
+dbutil$prepareImport(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = 'idpukbbnontab', assessmentVersionCode = '2022', cohortIdColumn = 'id', itemAnnotationTableName = NA) #set itemAnnotationTableName to NA/database NULL as we do not have an itemAnnotation
+#perform database import
+dbutil$importData(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = 'idpukbbnontab', assessmentVersionCode = '2022', stageCode = 'bl', doAnnotate = T, addIndividuals = T, doInsert = T)
+
+
+#connect again
+dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinfo$user, port=cinfo$port, password= cinfo$pw)
 
 #Standard IDPs
 dbutil$readImportData(dataframe = idpData$dfIDP)

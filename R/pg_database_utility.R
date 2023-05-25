@@ -517,7 +517,7 @@ pgDatabaseUtilityClass$methods(
 
 pgDatabaseUtilityClass$methods(
   formatImportColumnNames=function(prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){
-    columnFormat <<- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
+    columnFormat <<- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex, prefixesToItemiseRegex = prefixesToItemiseRegex, deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
     colnames(importDataDf) <<- columnFormat$names.new
   }
 )

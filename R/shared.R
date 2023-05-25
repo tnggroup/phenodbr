@@ -4,9 +4,10 @@
 #parses and formats the provided column names to the database standard
 formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){ #enumerate= - not used, enumerationCharacterLength=4
 
-  #prefixesToItemiseRegex <- list("QC_")
+  #maxVariableNameLength=30
+  #prefixesToItemiseRegex <- paste0(nontabMeta$code,"\\.")
   #deitemise=T
-  #columnNames<-colnames(idpData$dfIDP)
+  #columnNames<-colnames(allNontab)
   #prefixesToExcludeRegex = "catatonia\\."
   columnNames.orig<-columnNames
 
@@ -17,7 +18,7 @@ formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesTo
   valueLabels<-data.frame(valueColumn=columnNames.orig[colsNumeric])
   valueLabels$valueLabelColumn<-gsub(pattern = "(.+)_numeric$",replacement = "\\1", x = valueLabels$valueColumn, ignore.case = T)
   valueLabels<-merge(data.frame(valueColumn=columnNames.orig),valueLabels,by = "valueColumn", all.x = T)
-  rownames(valueLabels)<-valueLabels$valueColumn
+  rownames(valueLabels)<-valueLabels$valueColumn #this is sensitive to duplicates in valueColumn
   valueLabels<-valueLabels[columnNames.orig,]
   colsValueLabels<-columnNames.orig %in% valueLabels$valueLabelColumn
 
