@@ -573,7 +573,7 @@ pgDatabaseUtilityClass$methods(
     } else {
       variableAnnotationDf$variable_label <<- NA_character_
     }
-    variableAnnotationDf$index <<- 1:nrow(variableAnnotationDf)
+    variableAnnotationDf$variable_index <<- 1:nrow(variableAnnotationDf)
 
     if(parseItems){
       variableAnnotationDf$item_code <<- sub(pattern = paste0("^([a-z0-9]+)_.*"), replacement = "\\1", x = columnFormat$names.new)
@@ -615,7 +615,7 @@ pgDatabaseUtilityClass$methods(
     merged<-merge(variableAnnotationDf,newItemAnnotationCodes, by.x = "variable_label",by.y = "item_text",all.x = T, all.y = F)
     merged$item_code.x<-as.character(merged$item_code.x)
     merged$item_code.y<-as.character(merged$item_code.y)
-    merged<-merged[order(merged$index),]
+    merged<-merged[order(merged$variable_index),]
 
     merged_agg<-aggregate(column_name ~ item_code.y,merged,length)
     multiItems<-merged_agg[merged_agg$column_name>1,c("item_code.y")]
@@ -624,7 +624,7 @@ pgDatabaseUtilityClass$methods(
     merged$item_code<-ifelse(multiItemsVarL,merged$item_code.y,merged$item_code.x)
     merged$variable_code<-ifelse(multiItemsVarL,merged$item_code.x,merged$variable_code)
 
-    variableAnnotationDf[variableAnnotationDf$column_name %in% merged$column_name,c("column_name","variable_original_descriptor","variable_label", "index","item_code","variable_code")] <<- merged[,c("column_name","variable_original_descriptor","variable_label", "index","item_code","variable_code")]
+    variableAnnotationDf[variableAnnotationDf$column_name %in% merged$column_name,c("column_name","variable_original_descriptor","variable_label", "variable_index","item_code","variable_code")] <<- merged[,c("column_name","variable_original_descriptor","variable_label", "variable_index","item_code","variable_code")]
 
     itemAnnotationDf <<- merged[,c("item_code","variable_label")]
     colnames(itemAnnotationDf) <<- c("item_code","item_text")
