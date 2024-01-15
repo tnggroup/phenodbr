@@ -14,7 +14,7 @@ qCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-Sha
 
 cognitronCleanedFolderPath<-normalizePath("/Users/jakz/Library/CloudStorage/OneDrive-SharedLibraries-King'sCollegeLondon/TNG-Public - ilovecovidcns - ilovecovidcns/data/cognitron",mustWork = T)
 
-folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202305")
+folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ADDITIONAL_202401")
 folderpathIDPMeta<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/IDPs_44k")
 
 cohortSetting <- "covidcns"
@@ -580,6 +580,8 @@ dbutil <- pgDatabaseUtilityClass(host=cinfo$host, dbname=cinfo$dbname, user=cinf
 #DEPRECATED - if the first digit is 1 only.
 idpData<-covidcnsReadIDP(folderpathIDP = folderpathIDP, folderpathIDPMeta = folderpathIDPMeta)
 
+
+
 #Nontab data
 nontabMeta<-data.frame(code=c(
   "bb_IDP_all_align_to_T1",
@@ -628,6 +630,14 @@ dbutil$readImportData(dataframe = allNontab)
 dbutil$formatImportColumnNames(deitemise = T,prefixesToItemiseRegex = paste0(nontabMeta$code,"\\.")) #not sure why this does not work
 # dbutil$columnFormat <- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex,deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
 # colnames(importDataDf) <<- columnFormat$names.new
+
+#ANY ADDITIONAL EDITS, for example if there are additional numbers appended to the ID's
+#View(dbutil$importDataDf)
+id2<-strsplit(x = dbutil$importDataDf$id, split = "_",fixed = T)
+dbutil$importDataDf$id<-unlist(lapply(X = id2,FUN = function(x){
+  x[1]
+}))
+
 dbutil$fixIdColumn(cohortIdColumn = "id")
 
 #annotation tables
@@ -710,6 +720,13 @@ nformat <- formatStdColumnNames(columnNames = colnames(dbutil$importDataDf),pref
 dbutil$columnFormat<-nformat
 colnames(dbutil$importDataDf)<-dbutil$columnFormat$names.new
 
+#ANY ADDITIONAL EDITS, for example if there are additional numbers appended to the ID's
+#View(dbutil$importDataDf)
+id2<-strsplit(x = dbutil$importDataDf$id, split = "_",fixed = T)
+dbutil$importDataDf$id<-unlist(lapply(X = id2,FUN = function(x){
+  x[1]
+}))
+
 #fix ID
 dbutil$fixIdColumn(cohortIdColumn = "id")
 
@@ -728,12 +745,12 @@ nVarAnnotation$variable_unit<-nVarAnnotation$unit
 nVarAnnotation$variable_data_type<-trimws(nVarAnnotation$datatype)
 nVarAnnotation[variable_data_type=="int",variable_data_type:="integer"]
 nVarAnnotation[variable_data_type=="float",variable_data_type:="double precision"]
-dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","index","item_code","variable_documentation","variable_unit","variable_data_type")]))
+dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","variable_index","item_code","variable_documentation","variable_unit","variable_data_type")]))
 
 dbutil$castVariablesAsAnnotated()
 
 dbutil$itemAnnotationDf <- data.frame(
-  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$index),]$item_code)
+  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$variable_index),]$item_code)
 )
   #merge(dbutil$variableAnnotationDf,idpData$dfIDP,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
 #dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[order(dbutil$itemAnnotationDf$order),]
@@ -811,6 +828,13 @@ nformat <- formatStdColumnNames(columnNames = colnames(dbutil$importDataDf),pref
 dbutil$columnFormat<-nformat
 colnames(dbutil$importDataDf)<-dbutil$columnFormat$names.new
 
+#ANY ADDITIONAL EDITS, for example if there are additional numbers appended to the ID's
+#View(dbutil$importDataDf)
+id2<-strsplit(x = dbutil$importDataDf$id, split = "_",fixed = T)
+dbutil$importDataDf$id<-unlist(lapply(X = id2,FUN = function(x){
+  x[1]
+}))
+
 #fix ID
 dbutil$fixIdColumn(cohortIdColumn = "id")
 
@@ -824,12 +848,12 @@ nVarAnnotation$variable_unit<-nVarAnnotation$unit
 nVarAnnotation$variable_data_type<-trimws(nVarAnnotation$datatype)
 nVarAnnotation[variable_data_type=="int",variable_data_type:="integer"]
 nVarAnnotation[variable_data_type=="float",variable_data_type:="double precision"]
-dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","index","item_code","variable_documentation","variable_unit","variable_data_type")]))
+dbutil$variableAnnotationDf<-unique(as.data.frame(nVarAnnotation[,c("column_name","variable_code","variable_original_descriptor","variable_label","variable_index","item_code","variable_documentation","variable_unit","variable_data_type")]))
 
 dbutil$castVariablesAsAnnotated()
 
 dbutil$itemAnnotationDf <- data.frame(
-  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$index),]$item_code)
+  item_code=unique(dbutil$variableAnnotationDf[order(dbutil$variableAnnotationDf$variable_index),]$item_code)
 )
 #merge(dbutil$variableAnnotationDf,idpData$dfIDP,by.x="variable_original_descriptor", by.y="header", all.x = T, all.y = F)
 #dbutil$itemAnnotationDf<-dbutil$itemAnnotationDf[order(dbutil$itemAnnotationDf$order),]
