@@ -4,11 +4,16 @@
 #parses and formats the provided column names to the database standard
 formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){ #enumerate= - not used, enumerationCharacterLength=4
 
-  #maxVariableNameLength=30
-  #prefixesToItemiseRegex <- paste0(nontabMeta$code,"\\.")
-  #deitemise=T
-  #columnNames<-colnames(allNontab)
-  #prefixesToExcludeRegex = "catatonia\\."
+  #test
+  # columnNames <- colnames(dbutil$importDataDf)
+  # prefixesToExcludeRegex = list("phh\\.","phh\\.\\.")
+  # maxVariableNameLength=30
+  # prefixesToItemiseRegex=c()
+  # #prefixesToItemiseRegex <- paste0(nontabMeta$code,"\\.")
+  # deitemise=T
+  # forceItem=NULL
+  # maxVariableNameLength=30
+
   columnNames.orig<-columnNames
 
   itemisedColumnNames<-c()
@@ -80,7 +85,8 @@ formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesTo
   columnNames<-substr(tolower(columnNames),start = (nchar(columnNames)-maxVariableNameLength + 1), stop=(nchar(columnNames))) #take the tail rather than the head to accommodate tail numbering
   itemisedColumnNames<-substr(tolower(itemisedColumnNames),start = (nchar(itemisedColumnNames)-maxVariableNameLength + 1), stop=(nchar(itemisedColumnNames)))
 
-
+  #leading numeric
+  columnNames<-gsub(pattern = "^([0-9])",replacement = "n\\1", x = columnNames)
 
   #fix duplicate column naming - max 999 duplicate column names
   for(iCol in 1:length(columnNames)){

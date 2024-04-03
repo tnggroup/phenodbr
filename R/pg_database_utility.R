@@ -742,7 +742,7 @@ pgDatabaseUtilityClass$methods(
     if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
 
     #determine data type from data
-    dbutil$amendVariableAnnotationDataTypeIntegerFromData()
+    amendVariableAnnotationDataTypeIntegerFromData()
 
     #cast according to variable annotation - based on amended variable annotations with new data types
     castVariablesAsAnnotated()

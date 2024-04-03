@@ -42,6 +42,20 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsals", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = "als\\.", deitemise = T)
 dim(dbutil$importDataDf)
 
+##anxdep_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","anxdep_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsadscreener", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = "anxdep\\.", deitemise = T)
+dim(dbutil$importDataDf)
+
+##covid19_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","covid19_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnscovid19", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = "covid19\\.", deitemise = T)
+dim(dbutil$importDataDf)
+
 ##cage_covidcns_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","cage_covidcns_clean.rds"))
 head(dbutil$importDataDf)
@@ -91,6 +105,13 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "gad7", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("gad7\\.","gad7\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
+##harm_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","harm_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsharm", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("harm\\.","harm\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
 ##impact_covidcns_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","impact_covidcns_clean.rds"))
 head(dbutil$importDataDf)
@@ -105,11 +126,25 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsmhd", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("mhd\\.","mhd\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
+##migraine_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","migraine_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsmigraine", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("migraine\\.","migraine\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
 ##nonmotor_covidcns_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","nonmotor_covidcns_clean.rds"))
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsnonmotor", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("nonmotor\\.","nonmotor\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##ocir_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","ocir_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "oci", assessmentVersionCode = "r", stageCode = "bl",  prefixesToExcludeRegex = list("ocir\\.","ocir\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
 ##pcl5_covidcns_clean
@@ -119,11 +154,25 @@ colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "pcl5", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("pcl5\\.","pcl5\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
+##phh_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","phh_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsphh", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("phh\\.","phh\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
 ##phq9_covidcns_clean
 dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","phq9_covidcns_clean.rds"))
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "phq9", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("phq9\\.","phq9\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##psq_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","psq_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "psq", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("psq\\.","psq\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
 ##smelltaste_covidcns_clean
@@ -138,6 +187,13 @@ dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","su
 head(dbutil$importDataDf)
 colnames(dbutil$importDataDf)
 dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnsdem", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("sub\\.","sub\\.\\."), deitemise = T)
+dim(dbutil$importDataDf)
+
+##tinnitus_covidcns_clean
+dbutil$readImportData(filepath.rds = file.path(qCleanedFolderPath,"baseline","tinnitus_covidcns_clean.rds"))
+head(dbutil$importDataDf)
+colnames(dbutil$importDataDf)
+dbutil$defaultAnnotateAndImportProcedure(cohortCode = cohortSetting, instanceCode = cohortInstanceSetting, assessmentCode = "covidcnstinnitus", assessmentVersionCode = "1", stageCode = "bl",  prefixesToExcludeRegex = list("tinnitus\\.","tinnitus\\.\\."), deitemise = T)
 dim(dbutil$importDataDf)
 
 ##trauma_covidcns_clean
