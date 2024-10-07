@@ -1,12 +1,13 @@
 #general shared package utilities
 
-#HERE!! this does not quite remove duplicates!
+#TODO this does not quite remove duplicates? Is this still a problem? Needs more testing.
 #parses and formats the provided column names to the database standard
-formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){ #enumerate= - not used, enumerationCharacterLength=4
+formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(),suffixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){ #enumerate= - not used, enumerationCharacterLength=4
 
   #test
   # columnNames <- colnames(dbutil$importDataDf)
-  # prefixesToExcludeRegex = list("phh\\.","phh\\.\\.")
+  # prefixesToExcludeRegex = list("alsfrs\\.")
+  # suffixesToExcludeRegex = list("_followup1")
   # maxVariableNameLength=30
   # prefixesToItemiseRegex=c()
   # #prefixesToItemiseRegex <- paste0(nontabMeta$code,"\\.")
@@ -28,16 +29,12 @@ formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesTo
   colsValueLabels<-columnNames.orig %in% valueLabels$valueLabelColumn
 
 
-  #add label suffix to label column names
-  columnNames[colsValueLabels] <- paste0(columnNames[colsValueLabels],"l")
-
-
   colsSelect<-!colsValueLabels  #add more logic here when additional column types
 
 
   #per column name - exclude prefixes and _numeric suffixes
   for(iCol in 1:length(columnNames)){
-    #iCol<-1
+    #iCol<-10
     cName<-columnNames[iCol]
     #parse column name further
     ##exclude prefixes if any
@@ -61,8 +58,18 @@ formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesTo
       }
     }
 
-    ##exclude numeric suffix
+    ##exclude numeric suffix - execute before other suffixes
     cName<-gsub(pattern = paste0("(.+)_numeric$"),replacement = "\\1", x = cName, ignore.case = T)
+
+    ##exclude more suffixes
+    if(length(suffixesToExcludeRegex)>0){
+      for(iPat in 1:length(suffixesToExcludeRegex)){
+        #iPat<-1
+        cName<-gsub(pattern = paste0("(.+)",suffixesToExcludeRegex[iPat],"$"),replacement = "\\1", x = cName)
+      }
+    }
+
+    #store results
     columnNames[iCol]<-cName
     itemisedColumnNames[iCol]<-cPrefix
   }
@@ -80,6 +87,8 @@ formatStdColumnNames=function(columnNames,prefixesToExcludeRegex=c(), prefixesTo
   itemisedColumnNames<-gsub(pattern = "[^A-Za-z0-9_]",replacement = "", x = itemisedColumnNames) #includes the _ character to accomodate the item categorisation
   itemisedColumnNames<-gsub(pattern = "[\\.]",replacement = "", x = itemisedColumnNames)
 
+  #add label suffix to label column names
+  columnNames[colsValueLabels] <- paste0(columnNames[colsValueLabels],"l")
 
   #case and length
   columnNames<-substr(tolower(columnNames),start = (nchar(columnNames)-maxVariableNameLength + 1), stop=(nchar(columnNames))) #take the tail rather than the head to accommodate tail numbering

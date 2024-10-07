@@ -516,8 +516,8 @@ pgDatabaseUtilityClass$methods(
 
 
 pgDatabaseUtilityClass$methods(
-  formatImportColumnNames=function(prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){
-    columnFormat <<- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex, prefixesToItemiseRegex = prefixesToItemiseRegex, deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
+  formatImportColumnNames=function(prefixesToExcludeRegex=c(), prefixesToItemiseRegex=c(), suffixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, maxVariableNameLength=30){
+    columnFormat <<- formatStdColumnNames(columnNames = colnames(importDataDf),prefixesToExcludeRegex = prefixesToExcludeRegex, prefixesToItemiseRegex = prefixesToItemiseRegex, suffixesToExcludeRegex=suffixesToExcludeRegex, deitemise = deitemise, forceItem = forceItem, maxVariableNameLength = maxVariableNameLength)
     colnames(importDataDf) <<- columnFormat$names.new
   }
 )
@@ -692,6 +692,32 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
+pgDatabaseUtilityClass$methods(
+  compareColumnFormatWithSelectedExportData=function(){
+  list(
+   newNotInSelected = columnFormat[columnFormat$colsSelect==TRUE,]$names.new[!columnFormat[columnFormat$colsSelect==TRUE,]$names.new %in% colnames(exportDataDf)],
+   selectedNotInNew = colnames(exportDataDf)[!colnames(exportDataDf) %in% columnFormat[dbutil$columnFormat$colsSelect==TRUE,]$names.new]
+  )
+  }
+)
+
+pgDatabaseUtilityClass$methods(
+  renameAnnotatedVariableColumn=function(toChangeVariableColumnName,targetVariableColumnName){
+
+    if(any(variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code"))){
+
+      itemAnnotationDf[itemAnnotationDf$item_code==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
+
+    }
+    variableAnnotationDf[variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
+    variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("column_name")]<<-targetVariableColumnName
+
+    columnFormat$names.new[columnFormat$names.new==toChangeVariableColumnName]<<-targetVariableColumnName
+
+    colnames(importDataDf)[colnames(importDataDf)==toChangeVariableColumnName]<<-targetVariableColumnName
+  }
+)
+
 #this should not be needed
 pgDatabaseUtilityClass$methods(
   cleanup=function(){
@@ -712,37 +738,39 @@ pgDatabaseUtilityClass$methods(
 
 #must be a member of phenodb_coworker
 pgDatabaseUtilityClass$methods(
-  defaultAnnotateAndImportProcedure=function(cohortCode, instanceCode, assessmentCode, assessmentVersionCode, stageCode, itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T, cohortIdColumn="id", interpretBooleanDatatypeFromData=F, parseItemsFromVariableLabelText=T, prefixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, prepare=T, import=T, doAnnotate = T, addIndividuals = T, doInsert = T){
+  defaultAnnotateAndImportProcedure=function(cohortCode, instanceCode, assessmentCode, assessmentVersionCode, stageCode, itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T, cohortIdColumn="id", interpretBooleanDatatypeFromData=F, parseItemsFromVariableLabelText=T, prefixesToExcludeRegex=c(), suffixesToExcludeRegex=c(), deitemise=F, forceItem=NULL, prepare=T, import=T, doAnnotate = T, addIndividuals = T, doInsert = T, parseAndBusiness=T){
 
-    #variable labels
-    parseVariableLabels()
+    if(parseAndBusiness | is.null(variableLabelsDf)){
+      #variable labels
+      parseVariableLabels()
 
-    #format column names
-    formatImportColumnNames(prefixesToExcludeRegex = prefixesToExcludeRegex, deitemise = deitemise)
+      #format column names
+      formatImportColumnNames(prefixesToExcludeRegex = prefixesToExcludeRegex, suffixesToExcludeRegex=suffixesToExcludeRegex, deitemise = deitemise)
 
-    #synchronise variable text/label between value and label columns - only works for numeric columns missing labels
-    synchroniseVariableLabelTextForValueColumns()
+      #synchronise variable text/label between value and label columns - only works for numeric columns missing labels
+      synchroniseVariableLabelTextForValueColumns()
 
-    #fix ID
-    fixIdColumn(cohortIdColumn = cohortIdColumn)
+      #fix ID
+      fixIdColumn(cohortIdColumn = cohortIdColumn)
 
-    #variable value labels
-    parseVariableValueLabels()
+      #variable value labels
+      parseVariableValueLabels()
 
-    #Change data type of two-category 1/0 columns to boolean true/false, based on the value space data from a sample (tail) of 2000 rows
-    if(interpretBooleanDatatypeFromData) interpretAndParseBooleanDataTypes()
+      #Change data type of two-category 1/0 columns to boolean true/false, based on the value space data from a sample (tail) of 2000 rows
+      if(interpretBooleanDatatypeFromData) interpretAndParseBooleanDataTypes()
 
-    #select actual columns to import
-    filterColumnsOnFormatting()
+      #select actual columns to import
+      filterColumnsOnFormatting()
 
-    #annotation tables
-    createVariableAnnotation()
+      #annotation tables
+      createVariableAnnotation()
 
-    #update item categorisation from variable label texts, create item annotation
-    if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
+      #update item categorisation from variable label texts, create item annotation
+      if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
 
-    #determine data type from data
-    amendVariableAnnotationDataTypeIntegerFromData()
+      #determine data type from data
+      amendVariableAnnotationDataTypeIntegerFromData()
+    }
 
     #cast according to variable annotation - based on amended variable annotations with new data types
     castVariablesAsAnnotated()
