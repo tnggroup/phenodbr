@@ -400,10 +400,10 @@ pgDatabaseUtilityClass$methods(
 
 #make sure you don't have any tables named as the temporary tables - they will precede the temp tables in the path when run from R and make the access right assignment fail!!!
 pgDatabaseUtilityClass$methods(
-  prepareImport=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName="_import_data_df",cohortIdColumn,varableAnnotationTableName="_variable_annotation_df",itemAnnotationTableName="_item_annotation_df"){
+  prepareImport=function(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName="_import_data_df",cohortIdColumn,variableAnnotationTableName="_variable_annotation_df",itemAnnotationTableName="_item_annotation_df"){
     q <- dbSendQuery(connection,
                      "SELECT coh.prepare_import($1,$2,$3,$4,$5,$6,$7,$8)",
-                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName,cohortIdColumn,varableAnnotationTableName,itemAnnotationTableName))
+                     list(cohortCode,instanceCode,assessmentCode,assessmentVersionCode,tableName,cohortIdColumn,variableAnnotationTableName,itemAnnotationTableName))
     res<-dbFetch(q)
     dbClearResult(q)
     return(res)
@@ -522,10 +522,10 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
-
+#this also sets the column id data to uppercase
 pgDatabaseUtilityClass$methods(
   fixIdColumn=function(cohortIdColumn="id"){
-    importDataDf[,c(cohortIdColumn)] <<- gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf[,c(cohortIdColumn)])
+    importDataDf[,c(cohortIdColumn)] <<- toupper(gsub(pattern = "[^A-Za-z0-9]+", replacement = "\\1", x = importDataDf[,c(cohortIdColumn)]))
   }
 )
 
@@ -591,7 +591,24 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
-#This also creates an item annotation
+pgDatabaseUtilityClass$methods(
+  createBasicItemAnnotationFromVariableAnnotation=function(itemAnnotationAssessmentType="questionnaire"){
+    itemAnnotationDf<<-data.frame(item_code=unique(variableAnnotationDf$item_code))
+    itemAnnotationDf$item_text<<-NA
+    itemAnnotationDf$assessment_type <<- itemAnnotationAssessmentType
+
+    merged_agg<-aggregate(column_name ~ item_code,dbutil$variableAnnotationDf,length)
+    multiItems<-merged_agg[merged_agg$column_name>1,c("item_code")]
+    multiItems<-multiItems[multiItems!="null"] #remove strings denoting 'null'
+
+    itemAnnotationDf$assessment_item_type_code <<- ifelse(itemAnnotationDf$item_code %in% multiItems, "multi","single")
+    itemAnnotationDf$item_index<<-1:nrow(itemAnnotationDf)
+    itemAnnotationDf$item_documentation <<-""
+  }
+)
+
+#This also creates an (new) item annotation
+#TODO items created here do not consider duplicate item names
 pgDatabaseUtilityClass$methods(
   amendVariableAnnotationFromVariableLabelText=function(itemAnnotationAssessmentType="questionnaire",itemCodeEndHead=T){
     uniqueVariableLabels <- unlist(unique(na.omit(variableAnnotationDf$variable_label)))
@@ -702,19 +719,31 @@ pgDatabaseUtilityClass$methods(
 )
 
 pgDatabaseUtilityClass$methods(
-  renameAnnotatedVariableColumn=function(toChangeVariableColumnName,targetVariableColumnName){
+  renameAnnotatedVariableColumn=function(toChangeVariableColumnName,targetVariableColumnName,forceVariable=T,forceItem=NULL
+){
 
-    if(any(variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code"))){
+    if(any(variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName)){
 
       itemAnnotationDf[itemAnnotationDf$item_code==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
 
     }
-    variableAnnotationDf[variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
+
+    if(forceVariable){
+      variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("variable_code")]<<-targetVariableColumnName
+    }
+
+    if(!is.null(forceItem)){
+      variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-forceItem
+     } else {
+      variableAnnotationDf[variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
+    }
+
     variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("column_name")]<<-targetVariableColumnName
 
     columnFormat$names.new[columnFormat$names.new==toChangeVariableColumnName]<<-targetVariableColumnName
 
     colnames(importDataDf)[colnames(importDataDf)==toChangeVariableColumnName]<<-targetVariableColumnName
+
   }
 )
 
@@ -764,16 +793,17 @@ pgDatabaseUtilityClass$methods(
 
       #annotation tables
       createVariableAnnotation()
+      createBasicItemAnnotationFromVariableAnnotation()
 
       #update item categorisation from variable label texts, create item annotation
-      if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!!
+      if(parseItemsFromVariableLabelText) amendVariableAnnotationFromVariableLabelText(itemAnnotationAssessmentType,itemCodeEndHead) #THIS IS APPARENTLY WIP - fix when working on new qualtrics imports!!! Is it still WIP?
 
       #determine data type from data
       amendVariableAnnotationDataTypeIntegerFromData()
     }
 
     #cast according to variable annotation - based on amended variable annotations with new data types
-    castVariablesAsAnnotated()
+    if(prepare) castVariablesAsAnnotated()
 
     #import all tables
     if(prepare) importDataAsTables()
