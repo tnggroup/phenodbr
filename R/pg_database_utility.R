@@ -593,8 +593,9 @@ pgDatabaseUtilityClass$methods(
 
 pgDatabaseUtilityClass$methods(
   createBasicItemAnnotationFromVariableAnnotation=function(itemAnnotationAssessmentType="questionnaire"){
-    itemAnnotationDf<<-data.frame(item_code=unique(variableAnnotationDf$item_code))
-    itemAnnotationDf$item_text<<-NA
+
+    aggVarAnnot<-aggregate(x = variableAnnotationDf, by = list(variableAnnotationDf$item_code), FUN = head, 1)
+    itemAnnotationDf<<-data.frame(item_code=aggVarAnnot$item_code, item_text=aggVarAnnot$variable_label)
     itemAnnotationDf$assessment_type <<- itemAnnotationAssessmentType
 
     merged_agg<-aggregate(column_name ~ item_code,dbutil$variableAnnotationDf,length)
@@ -736,7 +737,10 @@ pgDatabaseUtilityClass$methods(
       variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-forceItem
      } else {
       variableAnnotationDf[variableAnnotationDf$item_code==toChangeVariableColumnName & variableAnnotationDf$column_name==toChangeVariableColumnName,c("item_code")]<<-targetVariableColumnName
-    }
+     }
+
+    #sync item and variable codes - remove variable code if equal to item code
+    variableAnnotationDf[!is.na(variableAnnotationDf$variable_code) & !is.na(variableAnnotationDf$item_code) & variableAnnotationDf$variable_code==variableAnnotationDf$item_code,c("variable_code")]<<-NA
 
     variableAnnotationDf[variableAnnotationDf$column_name==toChangeVariableColumnName,c("column_name")]<<-targetVariableColumnName
 
@@ -747,7 +751,8 @@ pgDatabaseUtilityClass$methods(
   }
 )
 
-#this should not be needed
+#this should not be needed for some of the temporary tables, as they should be cleaned up by the responsible script
+# t_export_data is not cleanded up though and will be removed by this
 pgDatabaseUtilityClass$methods(
   cleanup=function(){
     q <- dbSendQuery(connection,"DROP TABLE IF EXISTS t_prepare_import_data_settings CASCADE"
@@ -760,6 +765,9 @@ pgDatabaseUtilityClass$methods(
     )
     dbClearResult(q)
     q <- dbSendQuery(connection,"DROP VIEW IF EXISTS t_import_data_meta CASCADE"
+    )
+    dbClearResult(q)
+    q <- dbSendQuery(connection,"DROP VIEW IF EXISTS t_export_data CASCADE"
     )
     dbClearResult(q)
   }
