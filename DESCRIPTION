@@ -6,6 +6,6 @@ Author: Johan Zvrskovec
 Maintainer: The package maintainer <johan.zvrskovec@gmail.com>
 Description: An R package for the BRC Maudsley business routines.
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: What license is it under? Who knows?
 Encoding: UTF-8
 LazyData: true
