@@ -54,13 +54,13 @@ bioresourcerClass$methods(
     # filenameReceiptReport<-"NIHR-NBC-RTB-MHS-Sample-Receipt-Report-20250113.csv"
     # folderpathBioResourceData.NBC.raw<-brc$folderpathBioResourceData.NBC.raw
     # folderpathBioResourceData.NBC.barcodeReports<-brc$folderpathBioResourceData.NBC.barcodeReports
-    #folderpathBioResourceData.NBC.barcodeImports<-brc$folderpathBioResourceData.NBC.barcodeImports
+    # folderpathBioResourceData.NBC.barcodeImports<-brc$folderpathBioResourceData.NBC.barcodeImports
     # relSubFolderpathReceiptReports<-brc$relSubFolderpathReceiptReports
     # nThreads<-brc$nThreads
     # filepathReceiptReportOverride<-"data/NBC data/NBC raw reports/RR/January 2025/NIHR-NBC-RTB-MHS-Sample-Receipt-Report-20250113.csv"
 
     settingMHBIORSalivaKitSamplesFileNamePrefix<-"BioResourceRR_MHBIOR_saliva_kits_"
-    settingRedCapSalivaKitSamplesFileNamePrefix<-"BioResourceRR saliva_kits_unreturned_"
+    settingRedCapSalivaKitSamplesFileNamePrefix<-"BioResourceRR_saliva_kits_unreturned_"
 
     if(!is.null(filepathReceiptReportOverride)){
       fileToRead<-filepathReceiptReportOverride
@@ -96,18 +96,22 @@ bioresourcerClass$methods(
       return(1)
     }
 
-    #process MHBIOR samples report
+    #process MHBIOR samples report (including unreturned)
     #based on Scripts/Daily uploads/RR_saliva_kits_received_MHBIOR.py, Scripts/Daily uploads/RR_saliva_kits_received.py
     fileToRead<-file.path(folderpathBioResourceData.NBC.barcodeReports,fileYearString,paste0(settingMHBIORSalivaKitSamplesFileNamePrefix,strftime(fileDT,format='%d.%m.%Y'),".csv"))
     fileData.samplesReports <- data.table::fread(file = fileToRead, na.strings =c(".",NA,"NA",""), encoding = "UTF-8",check.names = T, fill = T, blank.lines.skip = T, data.table = T, nThread = nThreads, showProgress = F)
 
+    fileToRead<-file.path(folderpathBioResourceData.NBC.barcodeReports,fileYearString,paste0(settingRedCapSalivaKitSamplesFileNamePrefix,strftime(fileDT,format='%d.%m.%Y'),".csv"))
+    fileData.samplesReportsUnreturned <- data.table::fread(file = fileToRead, na.strings =c(".",NA,"NA",""), encoding = "UTF-8",check.names = T, fill = T, blank.lines.skip = T, data.table = T, nThread = nThreads, showProgress = F)
+
     setDT(fileData.samplesReports)
+    setDT(fileData.samplesReportsUnreturned)
     setDT(fileData.receiptReports)
     fileData.samplesReports[,c('Aliases', 'Kit.sent', 'Already.sent.kit.back')]<-NULL
-    fileData.receiptReports[,c('Project', 'Condition', 'Comment', 'ParticipantID', 'Clinic', 'Gender', 'Date.Time.Taken', 'TubeType', 'Photo',	'Volume', 'VolUnit')]<-NULL
 
     fileData.samplesReports[,c('kit_unusable','destruction_certificate'):=NA]
     fileData.samplesReports<-fileData.samplesReports[,.(participant_id=Participant.id, study_id=Study, barcode=Barcode, royal_mail_tracking_id=Tracking.id, date_kit_sent=Date.kit.sent, nhs_provided=NHS.Provided, kit_unusable, destruction_certificate, type=Sample.type, date_kit_received_na=Date.kit.received)]
+    fileData.samplesReportsUnreturned[,barcode:=saliva_kit_barcode][,saliva_kit_barcode:=NULL]
 
     #replace variables for NHS provided
     #unique(fileData.samplesReports$nhs_provided)
@@ -130,17 +134,30 @@ bioresourcerClass$methods(
     fileData.samplesReports[,barcode:=as.character(barcode)]
     fileData.receiptReports[,barcode:=as.character(TubeBarcode)][,TubeBarcode:=NULL]
 
-
     #merge, left outer join fileData.samplesReports with fileData.receiptReports
     dim(fileData.samplesReports)
     dim(fileData.receiptReports)
     fileData.samplesReports.receiptReports <- merge(fileData.samplesReports,fileData.receiptReports,by = "barcode",all.x = T, all.y = F)
     dim(fileData.samplesReports.receiptReports)
+    fileData.samplesReports.receiptReports[,c('Project', 'Condition', 'Comment', 'ParticipantID', 'Clinic', 'Gender', 'Date.Time.Taken', 'TubeType', 'Photo',	'Volume', 'VolUnit')]<-NULL #deactivate these variables to keep true to the previous rules
 
     fileToWrite<-file.path(folderpathBioResourceData.NBC.barcodeImports,fileYearString,paste0("RR_saliva_kits_received_MHBIOR_",strftime(fileDT,format='%d.%m.%Y'),".csv"))
-
     data.table::fwrite(x = fileData.samplesReports.receiptReports,file = fileToWrite, append = F,quote = T,sep = ",",col.names = T,nThread=nThreads)
     cat("\nBarcode imports file written to:\n",fileToWrite,"\n")
+
+    #merge, left outer join fileData.samplesReportsUnreturned with fileData.receiptReports
+    dim(fileData.samplesReportsUnreturned)
+    dim(fileData.receiptReports)
+    fileData.samplesReportsUnreturned.receiptReports <- merge(fileData.samplesReportsUnreturned,fileData.receiptReports,by = "barcode",all.x = T, all.y = F)
+    dim(fileData.samplesReportsUnreturned.receiptReports)
+    #this originally kept all columns from the receipt report
+
+    fileToWrite<-file.path(folderpathBioResourceData.NBC.barcodeImports,fileYearString,paste0("RR_saliva_kits_received_",strftime(fileDT,format='%d.%m.%Y'),".csv"))
+    data.table::fwrite(x = fileData.samplesReportsUnreturned.receiptReports,file = fileToWrite, append = F,quote = T,sep = ",",col.names = T,nThread=nThreads)
+    cat("\nBarcode imports UNRETURNED file written to:\n",fileToWrite,"\n")
+
+    #process REDCap file (Barcode imports, unreturned?)
+    #Data is currently in fileData.samplesReportsUnreturned.receiptReports(?)
 
 
 
