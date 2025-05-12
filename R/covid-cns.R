@@ -164,10 +164,22 @@ covidcnsReadIDP=function(folderpathIDP,folderpathIDPMeta){
 
 
 covidcnsParseIDColumn=function(IDs){
-  #IDs<-c("RGZ_CNS1005","RET_CNS02002","RJZ_CNS01009","RGZ_CNS1085")
+  #IDs<-c("RGZ_CNS1005","RET_CNS02002","RJZ_CNS01009","RGZ_CNS1085","RRV_CNS05011_2")
 
   #remove the prefixes
   IDs<-substr(IDs,start = 5, stop = nchar(IDs))
+
+  #remove the suffix "_2"
+  IDs<-unlist(
+      lapply(X = IDs, FUN = function(x){ #c("CNS05011_2","CNS05011") #test
+      i<-gregexpr("_",text = x)[[1]][[1]]
+      if(i>0){
+        substr(x,1,i-1)
+      } else {
+        x
+      }
+    })
+  )
 
   #add a zero to the 01-series with shorter length - JZ: I expanded this to other series as well.
   #deprecated & substring(IDs, first = 4, last = 4)=="1"
