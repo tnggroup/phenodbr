@@ -1,9 +1,9 @@
 #COVID-CNS specific routines
 covidcnsReadIDP=function(folderpathIDP,folderpathIDPMeta){
   #test
-  #folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202305")
-  #folderpathIDPMeta<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/IDPs_44k")
-  #library(data.table)
+  # folderpathIDP<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/IDP_ALL_202507")
+  # folderpathIDPMeta<-file.path("/Users/jakz/Documents/local_db/COVIDCNS/data/idp/IDPs_44k")
+  # library(data.table)
 
   folderpathIDP<-normalizePath(folderpathIDP,mustWork = T)
   folderpathIDPMeta<-normalizePath(folderpathIDPMeta,mustWork = T)
@@ -75,7 +75,7 @@ covidcnsReadIDP=function(folderpathIDP,folderpathIDPMeta){
   lNontab<-c()
   folderpathIDP.all<- paste(folderpathIDP,list.files(path = folderpathIDP, pattern = paste0("^CNS.+")),sep = '/')
   for(iIdp in 1:length(folderpathIDP.all)){
-    #iIdp<-2
+    #iIdp<-1
 
     folderpathIDPfiles<-folderpathIDP.all[iIdp]
 
@@ -158,7 +158,7 @@ covidcnsReadIDP=function(folderpathIDP,folderpathIDPMeta){
     lNontab[iNontab]<-list(cNontab)
   }
 
-  return(list(dfIDPmeta=dfIDPmeta,dfFSIDPmeta=dfFSIDPmeta,dfIDP=dfIDP,dfFSIDP=dfFSIDP,lNontab=lNontab))
+  return(list(dfIDPmeta=dfIDPmeta,dfFSIDPmeta=dfFSIDPmeta,dfIDP=dfIDP,dfFSIDP=dfFSIDP,lNontab=lNontab,lFolders=folderpathIDP.all))
 
 }
 
